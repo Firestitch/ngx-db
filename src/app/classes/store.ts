@@ -12,15 +12,7 @@ export class Store<T> {
 
   constructor(
   ) {
-    this._adapter = new LocalStorageAdapter(this);
-    this._adapter.get()
-      .pipe(
-        take(1),
-      )
-      .subscribe((data) => {
-        this._data$.next(data);
-        this._initAdapter();
-      });
+    this._initAdapter();
   }
 
   public get name(): string {
@@ -117,6 +109,18 @@ export class Store<T> {
   }
 
   private _initAdapter(): void {
+    this._adapter = new LocalStorageAdapter(this);
+    this._adapter.get()
+      .pipe(
+        take(1),
+      )
+      .subscribe((data) => {
+        this._data$.next(data);
+        this._initAdapterSave();
+      });
+  }
+
+  private _initAdapterSave(): void {
     this._data$
       .pipe(
         skip(1),
