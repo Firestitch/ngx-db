@@ -9,10 +9,10 @@ export class AppComponent {
 
   public config = environment;
 
-  public handlerCode = `import { FsTransferHandler } from '@firestitch/transfer';
+  public handlerCode = `import { FsDbHandler } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
-export class TransferHandler extends FsTransferHandler {
+export class TransferHandler extends FsDbHandler {
   constructor(private fsMessage: FsMessage) {
     super();
   }
@@ -28,13 +28,13 @@ export class TransferHandler extends FsTransferHandler {
 }`;
 
   public moduleCode = `
-import { FS_TRANSFER_HANDLER } from '@firestitch/transfer';
+import { FS_TRANSFER_HANDLER } from '@firestitch/db';
 import { TransferHandler } from './app/handlers/transfer.handler';
 
 
 @NgModule({
   imports: [
-    FsTransferModule
+    FsDbModule
   ],
   providers: [
     {

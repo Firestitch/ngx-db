@@ -1,0 +1,63 @@
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="gets()">
+  Gets
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
+  Put John Doe
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="put({ id: id, firstName: 'Billy', lastName: 'Bob' })">
+  Put Billy Bob
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="getId()">
+  Get ID 1
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="getsBilly()">
+  Gets Billy
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="post()">
+  Post
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="deleteAll()">
+  Delete All
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
+    (click)="deleteLast()">
+  Delete Last
+</a>
+
+<fieldset>
+  <legend>
+    Values
+  </legend>
+  {{values|json}}
+</fieldset>

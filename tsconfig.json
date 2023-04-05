@@ -2,8 +2,8 @@
   "extends": "./node_modules/@firestitch/component-tools/config/tsconfig.cli.json",
   "compilerOptions": {
     "paths": {
-      "@firestitch/transfer": [
-        "src/public_api.ts"
+      "@firestitch/db": [
+        "src/public.api.ts"
       ]
     }
   }
