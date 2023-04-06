@@ -1,106 +1,93 @@
-import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
-import { map, skip, take, takeUntil, tap } from 'rxjs/operators';
+import { Observable, Subject, of } from 'rxjs';
+import {  map,  switchMap } from 'rxjs/operators';
 
-import { LocalStorageAdapter } from '../adapters/local-storage.adapter';
+import { IndexDbStorage, Storage } from '../storage';
+import { StoreConfig } from '../interfaces';
+import { Operator } from '../types';
+
+import { Remote } from './remote';
 
 
 export class Store<T> {
 
-  private _data$ = new BehaviorSubject<{ [key: string]: T }>({});
-  private _adapter: LocalStorageAdapter;
   private _destroy$ = new Subject();
+  private _storage: Storage;
+  private _remote: Remote;
 
   constructor(
+    private _config: StoreConfig,
   ) {
-    this._initAdapter();
+    this._storage = this.config?.storage ?? new IndexDbStorage(this);
+    this._remote = this.config?.remote;
+  }
+
+  public get changes$(): Observable<any> {
+    return this._storage.changes$;
   }
 
   public get name(): string {
     return this.constructor.name;
   }
 
-  public get values$(): Observable<T[]> {
-    return this._data$.asObservable()
+  public get storage(): Storage {
+    return this._storage;
+  }
+
+  public get config(): StoreConfig {
+    return this._config;
+  }
+
+  public get keyName(): string {
+    return this.config.keyName;
+  }
+
+  public count(...operators: Operator[]): Observable<number> {
+    return this.keys(...operators)
       .pipe(
-        map((data) => Object.values(data)),
+        map((data) => data.length),
       );
   }
 
-  public get data(): { [key: string]: T } {
-    return this._data$.getValue();
+  public keys(...operators: Operator[]): Observable<string[]> {
+    return this.gets(...operators)
+      .pipe(
+        map((data) => data
+          .map((item) => item[this.keyName]),
+        ),
+      );
   }
 
-  public get length(): number {
-    return this.keys.length;
-  }
-
-  public get values(): T[] {
-    return Object.values(this._data$.getValue());
-  }
-
-  public get keys(): string[] {
-    return Object.keys(this._data$.getValue());
+  public clear(): Observable<void> {
+    return this._storage.clear();
   }
 
   public delete(...operators: any): Observable<any> {
-    let data = {};
-    if(operators.length !== 0) {
-      data = this.data;
-      const length = this.length;
-
-      Object.keys(data)
-        .forEach((key, index) => {
-
-          const every = operators.every((operator) => {
-            return operator(data[key], index, length);
-          });
-
-          if(every) {
-            delete data[key];
-          }
-        });
+    if(operators.length === 0) {
+      return this._storage.clear();
     }
 
-    this._data$.next(data);
+    return this.gets(...operators)
+      .pipe (
+        switchMap((data) => {
+          data = data.map((item) => {
+            return item[this.keyName];
+          });
 
-    return of(true);
-  }
-
-  public put(data: T): Observable<T> {
-    const value: any = {
-      ...this._data$.getValue(),
-      [(data as any).id]: data,
-    };
-
-    return of(data)
-      .pipe(
-        tap(() => this._data$.next(value)),
+          return this._storage.delete(data);
+        }),
       );
   }
 
-  public get(id: string): Observable<T> {
-
-    return of(this._data$.getValue()[id] || null);
+  public put(data: T | T[]): Observable<void> {
+    return this._storage.put(data);
   }
 
-  public exists(id: string): Observable<boolean> {
-
-    return of(id in this._data$.getValue());
+  public get(key: string): Observable<T> {
+    return this._storage.get(key);
   }
 
-  public gets(...operators): Observable<T[]> {
-    let values = this.values;
-
-    if(operators.length !== 0) {
-      const length = values.length;
-      values = values.filter((item, index) => {
-        return operators.every((operator) => {
-          return operator(item, index, length);
-        });
-      });
-    }
-
-    return of(values);
+  public gets(...operators: Operator[]): Observable<any[]> {
+    return this._storage.gets(operators);
   }
 
   public destroy(): void {
@@ -108,27 +95,11 @@ export class Store<T> {
     this._destroy$.complete();
   }
 
-  private _initAdapter(): void {
-    this._adapter = new LocalStorageAdapter(this);
-    this._adapter.get()
-      .pipe(
-        take(1),
-      )
-      .subscribe((data) => {
-        this._data$.next(data);
-        this._initAdapterSave();
-      });
-  }
+  private _initRemote(): Observable<void> {
+    if(!this._remote) {
+      return of(null);
+    }
 
-  private _initAdapterSave(): void {
-    this._data$
-      .pipe(
-        skip(1),
-        takeUntil(this._destroy$),
-      )
-      .subscribe(() => {
-        this._adapter.save();
-      });
+    return this._remote.sync(this);
   }
-
 }

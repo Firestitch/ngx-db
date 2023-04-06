@@ -2,13 +2,14 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, Store, eq, first, last } from '@firestitch/db';
+import { FsDb, Remote, eq, first, last } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, merge, of } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
 
-import { UnitTypeStore } from 'playground/app/stores';
+import { BuildingStore, UnitTypeStore } from 'playground/app/stores';
+import { DbIterable } from 'src/app/iterable';
 
 
 @Component({
@@ -29,13 +30,48 @@ export class GetComponent implements OnInit, OnDestroy {
     private _message: FsMessage,
     private _cdRef: ChangeDetectorRef,
   ) {
-    this._db.registerStore(new UnitTypeStore());
+    const remote = new Remote(
+      () => of([
+        {
+          id: 2,
+          firstName: 'Mike',
+          lastName: 'Waldo',
+          revision: {
+            firstName: {
+              number: 1,
+              date: new Date(),
+            },
+            lastName: {
+              number: 2,
+              date: new Date(),
+            },
+          },
+        },
+      ]),
+      () => of(true),
+      () => of(true),
+      { revisionName: 'revision' },
+    );
+
+    this._db
+      .register(new UnitTypeStore({ keyName: 'id', remote }))
+      .register(new BuildingStore({ keyName: 'id', remote }))
+      .init()
+      .subscribe();
   }
 
   public ngOnInit(): void {
-    this._db.store(UnitTypeStore)
-      .values$
+    this._db.ready$
       .pipe(
+        switchMap(() =>
+          merge(
+            this._db.store(UnitTypeStore).changes$
+              .pipe(
+                switchMap(() => this._db.store(UnitTypeStore).gets()),
+              ),
+            this._db.store(UnitTypeStore).gets(),
+          ),
+        ),
         takeUntil(this._destroy$),
       )
       .subscribe((values) => {
@@ -50,7 +86,6 @@ export class GetComponent implements OnInit, OnDestroy {
         eq('firstName', 'Billy'),
       )
       .subscribe((data)=> {
-        console.log(data);
         this._message.success(JSON.stringify(data));
       });
   }
@@ -72,7 +107,6 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
-
   public post(): void {
     this._db.store(UnitTypeStore)
       .put({
@@ -80,35 +114,46 @@ export class GetComponent implements OnInit, OnDestroy {
         firstName: 'Luke',
         lastName: 'Skywalker',
       })
-      .subscribe((response)=> {
+      .subscribe(()=> {
         this._message.success('Saved');
       });
   }
 
   public deleteAll(): void {
     this._db.store(UnitTypeStore)
-      .delete()
+      .clear()
       .subscribe(()=> {
         this._message.success('Deleted All');
       });
   }
 
-  public deleteLast(): void {
+  public deleteFirst(): void {
     this._db.store(UnitTypeStore)
       .delete(
-        last(),
+        first(),
       )
       .subscribe(()=> {
         this._message.success('Deleted last');
       });
   }
 
+  public getKeys(): void {
+    this._db.store(UnitTypeStore)
+      .keys()
+      .subscribe((values)=> {
+        this.values = values;
+        this._cdRef.markForCheck();
+        this._message.success();
+      });
+  }
+
   public gets(): void {
     this._db.store(UnitTypeStore)
       .gets()
-      .subscribe((data)=> {
-        console.log(data);
-        this._message.success(JSON.stringify(data));
+      .subscribe((values)=> {
+        this.values = values;
+        this._cdRef.markForCheck();
+        this._message.success();
       });
   }
 

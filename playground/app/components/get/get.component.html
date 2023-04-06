@@ -9,6 +9,13 @@
 <a 
     mat-raised-button 
     color="primary" 
+    (click)="getKeys()">
+  Get Keys
+</a>
+
+<a 
+    mat-raised-button 
+    color="primary" 
     (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
   Put John Doe
 </a>
@@ -51,8 +58,8 @@
 <a 
     mat-raised-button 
     color="primary" 
-    (click)="deleteLast()">
-  Delete Last
+    (click)="deleteFirst()">
+  Delete First
 </a>
 
 <fieldset>

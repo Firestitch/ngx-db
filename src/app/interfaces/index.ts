@@ -1,1 +1,2 @@
-export * from './storage.adapter';
+export * from './revision';
+export * from './store-config';
