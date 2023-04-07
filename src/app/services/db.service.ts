@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 
-import { BehaviorSubject, Observable, Subject, forkJoin, of, throwError, zip } from 'rxjs';
-import { catchError, filter, switchMap, tap } from 'rxjs/operators';
+import { Observable, Subject,  concat,  of, throwError } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { IndexDb, Remote, Store } from '../classes';
-import { IndexDbStorage } from '../storage';
+import { Store } from '../classes';
 
 
 @Injectable({
@@ -29,24 +28,23 @@ export class FsDb {
   public init(): Observable<any> {
     return of(true)
       .pipe(
-        switchMap(() => {
-          const indexDbStores = Array.from(this._stores.values())
-            .filter((store) => {
-              return store.storage instanceof IndexDbStorage;
-            });
 
-          if(!indexDbStores.length) {
-            return of(null);
-          }
-
-          return (new IndexDb())
-            .init(indexDbStores);
-        }),
+        // switchMap(() => {
+        //   return concat(
+        //     ...Array.from(this._stores.values())
+        //       .map((store) => store.init()),
+        //   );
+        //   //return this._sequantialInit(Array.from(this._stores.values()));
+        // }),
         switchMap(() => {
-          return forkJoin(
-            Array.from(this._stores.values())
-              .map((store) => store.storage.init()),
-          );
+          return [
+            ...Array.from(this._stores.values())
+              .map((store) => store.init()),
+            ...Array.from(this._stores.values())
+              .map((store) => store.open()),
+          ]
+            .reduce((o1$,o2$) => o1$.pipe(switchMap((o1) => o2$)));
+          //return this._sequantialOpen(Array.from(this._stores.values()));
         }),
         tap(() => {
           this._ready$.next(null);
@@ -66,6 +64,34 @@ export class FsDb {
     }
 
     return of(true);
+  }
+
+  private _sequantialInit(stores: Store<any>[]) {
+    const store = stores.pop();
+
+    if(!store) {
+      return of(true);
+    }
+
+    return of(true)
+      .pipe(
+        switchMap(() => store.init()),
+        switchMap(() => this._sequantialInit(stores)),
+      );
+  }
+
+  private _sequantialOpen(stores: Store<any>[]) {
+    const store = stores.pop();
+
+    if(!store) {
+      return of(true);
+    }
+
+    return of(true)
+      .pipe(
+        switchMap(() => store.open()),
+        switchMap(() => this._sequantialOpen(stores)),
+      );
   }
 
 }

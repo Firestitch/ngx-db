@@ -60,6 +60,10 @@ export class MemoryStorage extends Storage {
     return of(null);
   }
 
+  public open(): Observable<void> {
+    return of(null);
+  }
+
   private _emitValues() {
     if(this._values$.observers.length) {
       this._values$.next(Object.values(this._data));

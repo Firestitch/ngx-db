@@ -1,13 +1,14 @@
 import { Observable, Subscriber, of } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { finalize, map, switchMap } from 'rxjs/operators';
 
 import { DbIterable, IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
-
-import { Store } from '.';
+import { IndexDbDescribe } from '../interfaces';
 
 
 export class IndexDb {
+
+  //private static _dbs: { [key: string]: IDBDatabase } = {};
 
   private _request: IDBOpenDBRequest;
   private _db: IDBDatabase;
@@ -16,55 +17,6 @@ export class IndexDb {
     private _dbName: string = 'fsDb',
   ) {}
 
-  public init(stores: Store<any>[]): Observable<void> {
-    return this.describe
-      .pipe(
-        switchMap((describe: IndexDbDescribe) => {
-          const newStores =
-            stores
-              .filter((store) => {
-                return Array.from(describe.objectStoreNames).indexOf(store.name) === -1;
-              });
-
-          if(!newStores.length) {
-            return of(null);
-          }
-
-          const config = {
-            version: describe.version + 1,
-            upgrade: (event: any) => {
-              const db = event.target.result;
-
-              stores
-                .forEach((store) => {
-                  db.createObjectStore(store.name, {
-                    keyPath: store.config.keyName,
-                  });
-                });
-            },
-          };
-
-          return this.open(config)
-            .pipe(
-              tap(() => this.close()),
-            );
-        }),
-      );
-  }
-
-  public get describe(): Observable<IndexDbDescribe> {
-    return this.open()
-      .pipe(
-        map((db: IDBDatabase) => {
-          return {
-            version: db.version,
-            objectStoreNames: Array.from(db.objectStoreNames),
-          };
-        }),
-        tap(() => this.close()),
-      );
-  }
-
   public open(
     config?: {
       version?: number;
@@ -72,11 +24,15 @@ export class IndexDb {
     },
   ): Observable<IDBDatabase> {
     return new Observable((observer) => {
+      // if(this._dbName in IndexDb._dbs) {
+      //   this._db = IndexDb._dbs[this._dbName];
+
+      //   return observer.next(this._db);
+      // }
+
       this._request = window.indexedDB.open(this._dbName, config?.version);
 
-      if(config?.upgrade) {
-        this._request.onupgradeneeded = config.upgrade;
-      }
+      this._request.onupgradeneeded = config?.upgrade;
 
       this._request.onsuccess = (event: any) => {
         this._db = event.target.result;
@@ -89,6 +45,39 @@ export class IndexDb {
         observer.error(event);
       };
     });
+  }
+
+  public get describe(): Observable<IndexDbDescribe> {
+    return this.open()
+      .pipe(
+        map((db: IDBDatabase) => {
+          return {
+            version: db.version,
+            objectStoreNames: Array.from(db.objectStoreNames),
+          };
+        }),
+        switchMap((describe: IndexDbDescribe) => {
+          this.close();
+
+          return of(describe);
+        }),
+      );
+  }
+
+  public upgrade(
+    version: number,
+    upgrade: (event: IDBVersionChangeEvent) => void,
+  ): Observable<any> {
+    return this.open({
+      version, upgrade,
+    })
+      .pipe(
+        switchMap(() => {
+          this.close();
+
+          return of(null);
+        }),
+      );
   }
 
   public get(store: string, id): Observable<any> {
@@ -170,15 +159,8 @@ export class IndexDb {
   }
 
   public close(): void {
-    if(this._db) {
-      this._db.close();
-      this._db = null;
-    }
+    this._db?.close();
+    this._db = null;
+    //delete IndexDb._dbs[this._dbName];
   }
-}
-
-
-interface IndexDbDescribe {
-  version: number;
-  objectStoreNames: string[];
 }

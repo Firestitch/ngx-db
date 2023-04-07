@@ -95,11 +95,16 @@ export class Store<T> {
     this._destroy$.complete();
   }
 
-  private _initRemote(): Observable<void> {
-    if(!this._remote) {
-      return of(null);
-    }
+  public open(): Observable<void> {
+    return this._storage.open()
+      .pipe(
+        // switchMap(() => {
+        //   return this._remote ? this._remote.sync(this) : of(null);
+        // }),
+      );
+  }
 
-    return this._remote.sync(this);
+  public init(): Observable<void> {
+    return this._storage.init();
   }
 }

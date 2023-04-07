@@ -14,7 +14,7 @@ export class Remote {
   ) {
   }
 
-  public gets(query): Observable<any> {
+  public gets(query?: any): Observable<any> {
     return this._gets$(query);
   }
 
@@ -27,7 +27,7 @@ export class Remote {
   }
 
   public sync(store: Store<any>): Observable<void> {
-    return this.gets({})
+    return this.gets()
       .pipe(
         take(1),
         switchMap((data: any[]) => {
