@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, Remote, eq, first } from '@firestitch/db';
+import { FsDb, Remote, eq, first, limit } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
@@ -50,7 +50,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .init()
       .pipe(
         switchMap(() => this._db.sync()),
-        switchMap(() => this._db.clear()),
+        //switchMap(() => this._db.clear()),
       )
       .subscribe();
   }
@@ -145,6 +145,19 @@ export class GetComponent implements OnInit, OnDestroy {
   public gets(): void {
     this._db.store(AccountStore)
       .gets()
+      .subscribe((values)=> {
+        this.values = values;
+        this._cdRef.markForCheck();
+        this._message.success();
+      });
+  }
+
+
+  public getsLimit(): void {
+    this._db.store(AccountStore)
+      .gets(
+        limit(2, 2),
+      )
       .subscribe((values)=> {
         this.values = values;
         this._cdRef.markForCheck();

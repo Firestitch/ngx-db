@@ -1,5 +1,7 @@
+import { filterInit } from '../helpers';
+
 export function first() {
-  return (data, index, length) => {
+  return filterInit((data, index, length) => {
     return index === 0;
-  };
+  });
 }

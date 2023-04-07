@@ -1,2 +1,2 @@
 
-export type Operator = (...args) => any;
+export type Operator = ((...args) => any);
