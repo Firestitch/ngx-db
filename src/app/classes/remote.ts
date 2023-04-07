@@ -31,7 +31,7 @@ export class Remote {
       .pipe(
         take(1),
         switchMap((data: any[]) => {
-          return store.put(data);
+          return store.put(data, { change: false });
         }),
       );
   }

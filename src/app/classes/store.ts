@@ -62,10 +62,14 @@ export class Store<T> {
       );
   }
 
-  public put(data: T | T[]): Observable<void> {
+  public put(data: T | T[], config?: { change?: boolean }): Observable<void> {
     return this._storage.put(data)
       .pipe(
-        tap(() => this.change('put', data )),
+        tap(() => {
+          if((config?.change ?? true)) {
+            this.change('put', data );
+          }
+        }),
       );
   }
 
@@ -90,10 +94,14 @@ export class Store<T> {
       );
   }
 
-  public clear(): Observable<void> {
+  public clear(config?: { change?: boolean }): Observable<void> {
     return this._storage.clear()
       .pipe(
-        tap(() => this.change('clear')),
+        tap(() => {
+          if((config?.change ?? true)) {
+            this.change('clear');
+          }
+        }),
       );
   }
 
