@@ -28,23 +28,16 @@ export class FsDb {
   public init(): Observable<any> {
     return of(true)
       .pipe(
-
-        // switchMap(() => {
-        //   return concat(
-        //     ...Array.from(this._stores.values())
-        //       .map((store) => store.init()),
-        //   );
-        //   //return this._sequantialInit(Array.from(this._stores.values()));
-        // }),
         switchMap(() => {
-          return [
+          return Array.from(this._stores.values())
+            .map((store: Store<any>) => store.init())
+            .reduce((o1$, o2$) => o1$.pipe(switchMap(() => o2$)));
+        }),
+        switchMap(() => {
+          return concat(
             ...Array.from(this._stores.values())
-              .map((store) => store.init()),
-            ...Array.from(this._stores.values())
-              .map((store) => store.open()),
-          ]
-            .reduce((o1$,o2$) => o1$.pipe(switchMap((o1) => o2$)));
-          //return this._sequantialOpen(Array.from(this._stores.values()));
+              .map((store: Store<any>) => store.open()),
+          );
         }),
         tap(() => {
           this._ready$.next(null);
@@ -58,40 +51,26 @@ export class FsDb {
       );
   }
 
+  public sync(): Observable<any> {
+    return concat(
+      ...Array.from(this._stores.values())
+        .map((store: Store<any>) => store.sync()),
+    );
+  }
+
+  public clear(): Observable<any> {
+    return concat(
+      ...Array.from(this._stores.values())
+        .map((store: Store<any>) => store.clear()),
+    );
+  }
+
   public get ready$() {
     if(!this._ready) {
       return this._ready$.asObservable();
     }
 
     return of(true);
-  }
-
-  private _sequantialInit(stores: Store<any>[]) {
-    const store = stores.pop();
-
-    if(!store) {
-      return of(true);
-    }
-
-    return of(true)
-      .pipe(
-        switchMap(() => store.init()),
-        switchMap(() => this._sequantialInit(stores)),
-      );
-  }
-
-  private _sequantialOpen(stores: Store<any>[]) {
-    const store = stores.pop();
-
-    if(!store) {
-      return of(true);
-    }
-
-    return of(true)
-      .pipe(
-        switchMap(() => store.open()),
-        switchMap(() => this._sequantialOpen(stores)),
-      );
   }
 
 }

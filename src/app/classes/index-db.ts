@@ -1,5 +1,5 @@
 import { Observable, Subscriber, of } from 'rxjs';
-import { finalize, map, switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { DbIterable, IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
@@ -7,8 +7,6 @@ import { IndexDbDescribe } from '../interfaces';
 
 
 export class IndexDb {
-
-  //private static _dbs: { [key: string]: IDBDatabase } = {};
 
   private _request: IDBOpenDBRequest;
   private _db: IDBDatabase;
@@ -24,12 +22,6 @@ export class IndexDb {
     },
   ): Observable<IDBDatabase> {
     return new Observable((observer) => {
-      // if(this._dbName in IndexDb._dbs) {
-      //   this._db = IndexDb._dbs[this._dbName];
-
-      //   return observer.next(this._db);
-      // }
-
       this._request = window.indexedDB.open(this._dbName, config?.version);
 
       this._request.onupgradeneeded = config?.upgrade;
@@ -161,6 +153,5 @@ export class IndexDb {
   public close(): void {
     this._db?.close();
     this._db = null;
-    //delete IndexDb._dbs[this._dbName];
   }
 }

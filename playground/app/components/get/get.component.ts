@@ -2,14 +2,14 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, Remote, eq, first, last } from '@firestitch/db';
+import { FsDb, Remote, eq, first } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 
-import { BuildingStore, UnitTypeStore } from 'playground/app/stores';
-import { DbIterable } from 'src/app/iterable';
+import { BuildingStore, AccountStore } from 'playground/app/stores';
+import { AccountData } from 'playground/app/data';
 
 
 @Component({
@@ -30,33 +30,28 @@ export class GetComponent implements OnInit, OnDestroy {
     private _message: FsMessage,
     private _cdRef: ChangeDetectorRef,
   ) {
-    const remote = new Remote(
-      () => of([
-        {
-          id: 2,
-          firstName: 'Mike',
-          lastName: 'Waldo',
-          revision: {
-            firstName: {
-              number: 1,
-              date: new Date(),
-            },
-            lastName: {
-              number: 2,
-              date: new Date(),
-            },
-          },
-        },
-      ]),
-      () => of(true),
-      () => of(true),
+    const accountRemote = new Remote(
+      (query) => of(AccountData),
+      (data) => of(true),
+      (data) => of(true),
+      { revisionName: 'revision' },
+    );
+
+    const buildingRemote = new Remote(
+      () => of(AccountData),
+      (data) => of(true),
+      (data) => of(true),
       { revisionName: 'revision' },
     );
 
     this._db
-      .register(new UnitTypeStore({ keyName: 'id', remote }))
-      .register(new BuildingStore({ keyName: 'id', remote }))
+      .register(new AccountStore({ keyName: 'id', remote: accountRemote }))
+      .register(new BuildingStore({ keyName: 'id', remote: buildingRemote }))
       .init()
+      .pipe(
+        switchMap(() => this._db.sync()),
+        switchMap(() => this._db.clear()),
+      )
       .subscribe();
   }
 
@@ -65,11 +60,11 @@ export class GetComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap(() =>
           merge(
-            this._db.store(UnitTypeStore).changes$
+            this._db.store(AccountStore).changes$
               .pipe(
-                switchMap(() => this._db.store(UnitTypeStore).gets()),
+                switchMap(() => this._db.store(AccountStore).gets()),
               ),
-            this._db.store(UnitTypeStore).gets(),
+            this._db.store(AccountStore).gets(),
           ),
         ),
         takeUntil(this._destroy$),
@@ -81,7 +76,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public getsBilly(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .gets(
         eq('firstName', 'Billy'),
       )
@@ -91,7 +86,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public getId(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .get(this.id)
       .subscribe((data)=> {
         console.log(data);
@@ -100,7 +95,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public put(data): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .put(data)
       .subscribe((response)=> {
         this._message.success('Saved');
@@ -108,7 +103,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public post(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .put({
         id: Math.floor(Math.random() * 100000),
         firstName: 'Luke',
@@ -120,7 +115,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public deleteAll(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .clear()
       .subscribe(()=> {
         this._message.success('Deleted All');
@@ -128,7 +123,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public deleteFirst(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .delete(
         first(),
       )
@@ -138,7 +133,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public getKeys(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .keys()
       .subscribe((values)=> {
         this.values = values;
@@ -148,7 +143,7 @@ export class GetComponent implements OnInit, OnDestroy {
   }
 
   public gets(): void {
-    this._db.store(UnitTypeStore)
+    this._db.store(AccountStore)
       .gets()
       .subscribe((values)=> {
         this.values = values;

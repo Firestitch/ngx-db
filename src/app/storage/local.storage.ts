@@ -91,8 +91,6 @@ export class LocalStorage extends Storage {
 
   private _setItem(data): void {
     localStorage.setItem(this._store.name, JSON.stringify(data));
-
-    this.change();
   }
 
 }

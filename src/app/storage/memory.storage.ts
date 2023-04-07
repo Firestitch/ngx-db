@@ -8,7 +8,6 @@ import { Storage } from './storage';
 export class MemoryStorage extends Storage {
 
   private _data = {};
-  private _values$ = new Subject<any[]>();
 
   constructor(
     private _store: Store<any>,
@@ -26,14 +25,11 @@ export class MemoryStorage extends Storage {
       [this._store.config.keyName]: item,
     };
 
-    this._emitValues();
-
     return of(null);
   }
 
   public clear(): Observable<void> {
     this._data = {};
-    this._emitValues();
 
     return of(null);
   }
@@ -42,8 +38,6 @@ export class MemoryStorage extends Storage {
     keys.forEach((key) => {
       delete this._data[key];
     });
-
-    this._emitValues();
 
     return of(null);
   }
@@ -62,12 +56,6 @@ export class MemoryStorage extends Storage {
 
   public open(): Observable<void> {
     return of(null);
-  }
-
-  private _emitValues() {
-    if(this._values$.observers.length) {
-      this._values$.next(Object.values(this._data));
-    }
   }
 
 }

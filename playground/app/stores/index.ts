@@ -1,2 +1,2 @@
-export * from './unit-type.store';
+export * from './account.store';
 export * from './building.store';
