@@ -6,7 +6,7 @@ import { FsDb, Remote, eq, first, limit } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
-import { switchMap, takeUntil } from 'rxjs/operators';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore } from 'playground/app/stores';
 import { AccountData } from 'playground/app/data';
@@ -32,8 +32,18 @@ export class GetComponent implements OnInit, OnDestroy {
   ) {
     const accountRemote = new Remote(
       (query) => of(AccountData),
-      (data) => of(true),
-      (data) => of(true),
+      (data) => of(true)
+        .pipe(
+          tap((data) => {
+            console.log('Remote Put', data);
+          }),
+        ),
+      (data) => of(true)
+        .pipe(
+          tap((data) => {
+            console.log('Remote Delete', data);
+          }),
+        ),
       { revisionName: 'revision' },
     );
 

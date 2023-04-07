@@ -1,8 +1,8 @@
 import { Observable, Subject, of } from 'rxjs';
-import {  map,  switchMap, tap } from 'rxjs/operators';
+import {  map,  switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, Storage } from '../storage';
-import { StoreConfig } from '../interfaces';
+import { Changes, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
 
 import { Remote } from './remote';
@@ -13,7 +13,7 @@ export class Store<T> {
   private _destroy$ = new Subject();
   private _storage: Storage;
   private _remote: Remote;
-  private _changes$ = new Subject<{ type?: 'put' | 'delete' }>();
+  private _changes$ = new Subject<Changes<T>>();
 
   constructor(
     private _config: StoreConfig,
@@ -22,11 +22,11 @@ export class Store<T> {
     this._remote = this.config?.remote;
   }
 
-  public change() {
-    this._changes$.next(null);
+  public change(type, data?) {
+    this._changes$.next({ type, data });
   }
 
-  public get changes$(): Observable<any> {
+  public get changes$(): Observable<Changes<T>> {
     return this._changes$.asObservable();
   }
 
@@ -65,18 +65,11 @@ export class Store<T> {
   public put(data: T | T[]): Observable<void> {
     return this._storage.put(data)
       .pipe(
-        tap(() => this.change()),
+        tap(() => this.change('put', data )),
       );
   }
 
   public delete(...operators: any): Observable<any> {
-    if(operators.length === 0) {
-      return this._storage.clear()
-        .pipe(
-          tap(() => this.change()),
-        );
-    }
-
     return this.gets(...operators)
       .pipe (
         switchMap((data) => {
@@ -86,7 +79,12 @@ export class Store<T> {
 
           return this._storage.delete(keys)
             .pipe(
-              tap(() => this.change()),
+              tap(() => {
+                keys
+                  .forEach((key) => {
+                    this.change('delete', { [this.keyName]: key });
+                  });
+              }),
             );
         }),
       );
@@ -95,7 +93,7 @@ export class Store<T> {
   public clear(): Observable<void> {
     return this._storage.clear()
       .pipe(
-        tap(() => this.change()),
+        tap(() => this.change('clear')),
       );
   }
 
@@ -113,6 +111,25 @@ export class Store<T> {
   }
 
   public init(): Observable<void> {
+    if(this._remote) {
+      this.changes$
+        .pipe(
+          switchMap((changes) => {
+            switch(changes.type) {
+              case 'put':
+                return this._remote.put(changes.data);
+
+              case 'delete':
+                return this._remote.delete(changes.data);
+            }
+
+            return of(null);
+          }),
+          takeUntil(this._destroy$),
+        )
+        .subscribe();
+    }
+
     return this._storage.init();
   }
 
