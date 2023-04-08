@@ -85,15 +85,4 @@ export class IndexDbStorage extends Storage {
         map(() => null),
       );
   }
-
-  private _map(data, operators): Observable<any> {
-    const mapOneOperator = operators
-      .find((operator: Operator) => (operator as any).type === 'mapOne');
-
-    if(mapOneOperator) {
-      debugger;
-    }
-
-    return of(data);
-  }
 }

@@ -94,6 +94,7 @@ export class IndexDbIterable {
 
   private _complete(observer) {
     observer.next(this._data);
+    observer.complete();
   }
 
   private _mapOne(mapOne: MapOneOperator): Observable<any> {
