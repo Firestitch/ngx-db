@@ -54,7 +54,7 @@ export class LocalStorage extends Storage {
             value.forEach((item) => {
               data = {
                 ...data,
-                [item[this._store.config.keyName]]: {
+                [item[this._store.keyName]]: {
                   ...item,
                 },
               };
@@ -62,7 +62,7 @@ export class LocalStorage extends Storage {
           } else {
             data = {
               ...data,
-              [value[this._store.config.keyName]]: {
+              [value[this._store.keyName]]: {
                 ...value,
               },
             };

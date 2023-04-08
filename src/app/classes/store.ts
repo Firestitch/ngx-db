@@ -8,12 +8,14 @@ import { Operator } from '../types';
 import { Remote } from './remote';
 
 
-export class Store<T> {
+export abstract class Store<T> {
 
   private _destroy$ = new Subject();
   private _storage: Storage;
   private _remote: Remote;
   private _changes$ = new Subject<Changes<T>>();
+
+  protected abstract _keyName: string;
 
   constructor(
     private _config: StoreConfig,
@@ -43,7 +45,7 @@ export class Store<T> {
   }
 
   public get keyName(): string {
-    return this.config.keyName;
+    return this._keyName;
   }
 
   public count(...operators: Operator[]): Observable<number> {

@@ -4,6 +4,7 @@ import { map, switchMap, tap } from 'rxjs/operators';
 import { IndexDb, Store } from '../classes';
 import { DbIterable } from '../iterable';
 import { IndexDbDescribe } from '../interfaces';
+import { Operator } from '../types';
 
 import { Storage } from './storage';
 
@@ -19,10 +20,7 @@ export class IndexDbStorage extends Storage {
   }
 
   public gets(operators: any[]): Observable<any[]> {
-    return this._indexDB.data(this._store.name, operators)
-      .pipe(
-        switchMap((dbIterable: DbIterable) => dbIterable.data),
-      );
+    return this._indexDB.data(this._store.name, operators);
   }
 
   public put(data: any): Observable<void> {
@@ -43,10 +41,7 @@ export class IndexDbStorage extends Storage {
   }
 
   public clear(): Observable<void> {
-    return this._indexDB.clear(this._store.name)
-      .pipe(
-
-      );
+    return this._indexDB.clear(this._store.name);
   }
 
   public delete(keys: string[]): Observable<void> {
@@ -81,7 +76,7 @@ export class IndexDbStorage extends Storage {
           const upgrade = (event: any) => {
             const db = event.target.result;
             db.createObjectStore(this._store.name, {
-              keyPath: this._store.config.keyName,
+              keyPath: this._store.keyName,
             });
           };
 
@@ -89,5 +84,16 @@ export class IndexDbStorage extends Storage {
         }),
         map(() => null),
       );
+  }
+
+  private _map(data, operators): Observable<any> {
+    const mapOneOperator = operators
+      .find((operator: Operator) => (operator as any).type === 'mapOne');
+
+    if(mapOneOperator) {
+      debugger;
+    }
+
+    return of(data);
   }
 }

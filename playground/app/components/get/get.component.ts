@@ -2,14 +2,14 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, Remote, eq, first, limit } from '@firestitch/db';
+import { FsDb, Remote, eq, first, limit, mapMany, mapOne } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore } from 'playground/app/stores';
-import { AccountData } from 'playground/app/data';
+import { AccountData, BuildingData } from 'playground/app/data';
 
 
 @Component({
@@ -34,29 +34,29 @@ export class GetComponent implements OnInit, OnDestroy {
       (query) => of(AccountData),
       (data) => of(true)
         .pipe(
-          tap((data) => {
-            console.log('Remote Put', data);
+          tap((_data) => {
+            console.log('Remote Put', _data);
           }),
         ),
       (data) => of(true)
         .pipe(
-          tap((data) => {
-            console.log('Remote Delete', data);
+          tap((_data) => {
+            console.log('Remote Delete', _data);
           }),
         ),
       { revisionName: 'revision' },
     );
 
     const buildingRemote = new Remote(
-      () => of(AccountData),
+      () => of(BuildingData),
       (data) => of(true),
       (data) => of(true),
       { revisionName: 'revision' },
     );
 
     this._db
-      .register(new AccountStore({ keyName: 'id', remote: accountRemote }))
-      .register(new BuildingStore({ keyName: 'id', remote: buildingRemote }))
+      .register(new AccountStore({ remote: accountRemote }))
+      .register(new BuildingStore({ remote: buildingRemote }))
       .init()
       .pipe(
         switchMap(() => this._db.sync()),
@@ -118,6 +118,7 @@ export class GetComponent implements OnInit, OnDestroy {
         id: Math.floor(Math.random() * 100000),
         firstName: 'Luke',
         lastName: 'Skywalker',
+        buildingId: 1,
       })
       .subscribe(()=> {
         this._message.success('Saved');
@@ -154,7 +155,10 @@ export class GetComponent implements OnInit, OnDestroy {
 
   public gets(): void {
     this._db.store(AccountStore)
-      .gets()
+      .gets(
+        mapOne(this._db.store(BuildingStore), 'building', 'buildingId', 'id'),
+        mapMany(this._db.store(BuildingStore), 'buildings', 'id', 'buildingId'),
+      )
       .subscribe((values)=> {
         this.values = values;
         this._cdRef.markForCheck();

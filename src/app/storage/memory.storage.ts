@@ -22,7 +22,7 @@ export class MemoryStorage extends Storage {
   public put(item: any): Observable<void> {
     this._data = {
       ...this.data,
-      [this._store.config.keyName]: item,
+      [this._store.keyName]: item,
     };
 
     return of(null);

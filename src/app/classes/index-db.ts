@@ -126,11 +126,15 @@ export class IndexDb {
     });
   }
 
-  public data(store: string, operators: Operator[]): Observable<DbIterable> {
-    return new Observable((observer: Subscriber<any>) => {
-      observer.next(new IndexDbIterable(this._db, store, operators));
-      observer.complete();
-    });
+  public data(store: string, operators: Operator[]): Observable<any[]> {
+    //return new Observable((observer: Subscriber<any>) => {
+
+    const iterable = new IndexDbIterable(this._db, store, operators);
+
+    return iterable.data$;
+    //  observer.next(iterable.data);
+    // observer.complete();
+    //});
   }
 
   public put(store, data): Observable<any> {
