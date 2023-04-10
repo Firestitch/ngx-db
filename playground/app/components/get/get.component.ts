@@ -44,6 +44,12 @@ export class GetComponent implements OnInit, OnDestroy {
             console.log('Remote Put', _data);
           }),
         ),
+      post: (data) => of(data)
+        .pipe(
+          tap((_data) => {
+            console.log('Remote Post', _data);
+          }),
+        ),
     };
 
     const buildingRemote: RemoteConfig = {
@@ -52,6 +58,12 @@ export class GetComponent implements OnInit, OnDestroy {
         .pipe(
           tap((_data) => {
             console.log('Remote Put', _data);
+          }),
+        ),
+      post: (data) => of(data)
+        .pipe(
+          tap((_data) => {
+            console.log('Remote Post', _data);
           }),
         ),
     };

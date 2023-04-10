@@ -1,7 +1,7 @@
 import { Observable, Subject, merge, of } from 'rxjs';
 import { catchError, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
 
-import { RemoteConfig } from '../interfaces';
+import { Data, RemoteConfig } from '../interfaces';
 import { eq, not } from '../operators';
 
 import { Store } from './store';
@@ -13,6 +13,7 @@ export class Remote<T> {
   private _modifyDate: Date;
   private _gets: (query: any) => Observable<any[]>;
   private _put: (data: any) => Observable<any>;
+  private _post: (data: any) => Observable<any>;
   private _syncing = false;
 
   constructor(
@@ -21,6 +22,7 @@ export class Remote<T> {
   ) {
     this._gets = this._config.gets;
     this._put = this._config.put;
+    this._post = this._config.post;
   }
 
   public sync(): Observable<void> {
@@ -71,14 +73,13 @@ export class Remote<T> {
       .pipe(
         switchMap((data) => {
           return  merge(
-            ...data.map((item) => {
-              return this._put(item)
+            ...data.map((item: Data<any>) => {
+              const save$ = (
+                item._revision.number === 1 ?
+                  this._post(item) :
+                  this._put(item)
+              )
                 .pipe(
-                  catchError((error) => {
-                    console.error('Sync Put Error', error);
-
-                    return of(null);
-                  }),
                   switchMap((response) => {
                     response = {
                       ...response,
@@ -86,6 +87,15 @@ export class Remote<T> {
                     };
 
                     return this._store.storage.put(response);
+                  }),
+                );
+
+              return save$
+                .pipe(
+                  catchError((error) => {
+                    console.error('Sync Put Error', error);
+
+                    return of(null);
                   }),
                 );
             }),
