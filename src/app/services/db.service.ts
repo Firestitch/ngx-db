@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable, Subject,  concat,  of, throwError } from 'rxjs';
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
 
@@ -29,20 +29,33 @@ export class FsDb {
     return of(true)
       .pipe(
         switchMap(() => {
-          return Array.from(this._stores.values())
-            .map((store: Store<any>) => store.init())
-            .reduce((o1$, o2$) => o1$.pipe(switchMap(() => o2$)));
-        }),
-        switchMap(() => {
           return concat(
-            ...Array.from(this._stores.values())
-              .map((store: Store<any>) => store.open()),
-          );
+            ...[
+              ...Array.from(this._stores.values())
+                .map((store: Store<any>) => store.init()),
+              ...Array.from(this._stores.values())
+                .map((store: Store<any>) => store.open()),
+              ...Array.from(this._stores.values())
+                .map((store: Store<any>) => store.initSync()),
+            ],
+          )
+            .pipe(
+              toArray(),
+            );
         }),
         tap(() => {
           this._ready$.next(null);
           this._ready$.complete();
         }),
+        // switchMap(() => {
+        //   return concat(
+        //     ...Array.from(this._stores.values())
+        //       .map((store: Store<any>) => store.initSync()),
+        //   )
+        //     .pipe(
+        //       toArray(),
+        //     );
+        // }),
         catchError((error) => {
           this._ready$.error(error);
 
@@ -55,7 +68,10 @@ export class FsDb {
     return concat(
       ...Array.from(this._stores.values())
         .map((store: Store<any>) => store.sync()),
-    );
+    )
+      .pipe(
+        toArray(),
+      );
   }
 
   public clear(): Observable<any> {

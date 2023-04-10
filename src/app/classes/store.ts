@@ -1,8 +1,8 @@
-import { Observable, Subject, of } from 'rxjs';
-import {  map,  switchMap, takeUntil, tap } from 'rxjs/operators';
+import { Observable, Subject, interval, of } from 'rxjs';
+import {  catchError, map,  switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, Storage } from '../storage';
-import { Changes, StoreConfig } from '../interfaces';
+import { Changes, Data, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
 
 import { Remote } from './remote';
@@ -12,16 +12,20 @@ export abstract class Store<T> {
 
   private _destroy$ = new Subject();
   private _storage: Storage;
-  private _remote: Remote;
+  private _remote: Remote<T>;
   private _changes$ = new Subject<Changes<T>>();
 
   protected abstract _keyName: string;
+  protected abstract _revisionName: string;
 
   constructor(
     private _config: StoreConfig,
   ) {
     this._storage = this.config?.storage ?? new IndexDbStorage(this);
-    this._remote = this.config?.remote;
+
+    if(_config.remote) {
+      this._remote = new Remote<T>(this, _config.remote);
+    }
   }
 
   public change(type, data?) {
@@ -64,13 +68,24 @@ export abstract class Store<T> {
       );
   }
 
-  public put(data: T | T[], config?: { change?: boolean }): Observable<void> {
+  public put(data: Data<T> | Data<T>[]): Observable<void> {
+    data = (Array.isArray(data) ? data : [data])
+      .map((item) => {
+        const _revision = {
+          number: Number(item._revision?.number || 0) + 1,
+          date: new Date(),
+        };
+
+        return {
+          ...item,
+          _revision,
+        };
+      });
+
     return this._storage.put(data)
       .pipe(
         tap(() => {
-          if((config?.change ?? true)) {
-            this.change('put', data );
-          }
+          this.change('put', data );
         }),
       );
   }
@@ -96,13 +111,11 @@ export abstract class Store<T> {
       );
   }
 
-  public clear(config?: { change?: boolean }): Observable<void> {
+  public clear(): Observable<void> {
     return this._storage.clear()
       .pipe(
         tap(() => {
-          if((config?.change ?? true)) {
-            this.change('clear');
-          }
+          this.change('clear');
         }),
       );
   }
@@ -121,26 +134,28 @@ export abstract class Store<T> {
   }
 
   public init(): Observable<void> {
-    if(this._remote) {
-      this.changes$
-        .pipe(
-          switchMap((changes) => {
-            switch(changes.type) {
-              case 'put':
-                return this._remote.put(changes.data);
+    return this._storage.init();
+  }
 
-              case 'delete':
-                return this._remote.delete(changes.data);
-            }
-
-            return of(null);
-          }),
-          takeUntil(this._destroy$),
-        )
-        .subscribe();
+  public initSync(): Observable<void> {
+    if(!this._remote) {
+      return of(null);
     }
 
-    return this._storage.init();
+    const syncInterval = 10 * 1000;
+    interval(syncInterval)
+      .pipe(
+        catchError((error) => {
+          console.error('Sync Error', error);
+
+          return of(null);
+        }),
+        switchMap(() => this.sync()),
+        takeUntil(this._destroy$),
+      )
+      .subscribe();
+
+    return this.sync();
   }
 
   public open(): Observable<void> {
@@ -148,6 +163,6 @@ export abstract class Store<T> {
   }
 
   public sync(): Observable<void> {
-    return this._remote ? this._remote.sync(this) : of(null);
+    return this._remote ? this._remote.sync() : of(null);
   }
 }

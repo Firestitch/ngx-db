@@ -1,18 +1,21 @@
 
 export const AccountData = [
   {
-    id: 2,
+    id: '2',
     firstName: 'Mike',
     lastName: 'Waldo',
     revision: {
-      firstName: {
-        number: 1,
-        date: new Date(),
-      },
-      lastName: {
-        number: 2,
-        date: new Date(),
-      },
+      number: 1,
+      modifyDate: new Date(),
+    },
+  },
+  {
+    id: '10',
+    firstName: 'Susan',
+    lastName: 'Wilson',
+    revision: {
+      number: 1,
+      modifyDate: new Date(),
     },
   },
 ];

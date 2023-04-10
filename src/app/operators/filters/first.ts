@@ -1,4 +1,4 @@
-import { filterInit } from '../helpers';
+import { filterInit } from '../../helpers';
 
 export function first() {
   return filterInit((data, index, length) => {

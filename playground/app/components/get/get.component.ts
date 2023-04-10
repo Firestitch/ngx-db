@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, Remote, eq, first, limit, mapMany, mapOne } from '@firestitch/db';
+import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
@@ -30,38 +30,36 @@ export class GetComponent implements OnInit, OnDestroy {
     private _message: FsMessage,
     private _cdRef: ChangeDetectorRef,
   ) {
-    const accountRemote = new Remote(
-      (query) => of(AccountData),
-      (data) => of(true)
+    const accountRemote: RemoteConfig = {
+      gets: (query) =>
+        of(AccountData)
+          .pipe(
+            tap((_data) => {
+              console.log('Remote Gets', query);
+            }),
+          ),
+      put: (data) => of(data)
         .pipe(
           tap((_data) => {
             console.log('Remote Put', _data);
           }),
         ),
-      (data) => of(true)
+    };
+
+    const buildingRemote: RemoteConfig = {
+      gets: (query) => of(BuildingData),
+      put: (data) => of(data)
         .pipe(
           tap((_data) => {
-            console.log('Remote Delete', _data);
+            console.log('Remote Put', _data);
           }),
         ),
-      { revisionName: 'revision' },
-    );
-
-    const buildingRemote = new Remote(
-      () => of(BuildingData),
-      (data) => of(true),
-      (data) => of(true),
-      { revisionName: 'revision' },
-    );
+    };
 
     this._db
       .register(new AccountStore({ remote: accountRemote }))
       .register(new BuildingStore({ remote: buildingRemote }))
       .init()
-      .pipe(
-        switchMap(() => this._db.sync()),
-        //switchMap(() => this._db.clear()),
-      )
       .subscribe();
   }
 
@@ -112,6 +110,26 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
+  public putSusan(): void {
+    this._db.store(AccountStore)
+      .get('10')
+      .pipe(
+        switchMap((data) => {
+          data = {
+            ...data,
+            firstName: 'Susan Changed',
+            lastName: 'Wilson Changed',
+          };
+
+          return this._db.store(AccountStore)
+            .put(data);
+        }),
+      )
+      .subscribe((response)=> {
+        this._message.success('Saved');
+      });
+  }
+
   public post(): void {
     this._db.store(AccountStore)
       .put({
@@ -140,6 +158,13 @@ export class GetComponent implements OnInit, OnDestroy {
       )
       .subscribe(()=> {
         this._message.success('Deleted last');
+      });
+  }
+
+  public clear(): void {
+    this._db.clear()
+      .subscribe(()=> {
+        this._message.success('Cleared');
       });
   }
 
