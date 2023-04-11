@@ -39,7 +39,7 @@ export class FsDb {
           )
             .pipe(
               toArray(),
-              switchMap(() => merge(
+              switchMap(() => concat(
                 ...Array.from(this._stores.values())
                   .map((store: Store<any>) => store.initSync()),
               )),

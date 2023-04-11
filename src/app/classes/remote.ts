@@ -1,4 +1,4 @@
-import { Observable, Subject, merge, of, throwError } from 'rxjs';
+import { Observable, Subject, concat, merge, of, throwError } from 'rxjs';
 import { catchError, filter, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { Data, RemoteConfig } from '../interfaces';
@@ -10,11 +10,11 @@ import { Store } from './store';
 export class Remote<T> {
 
   private _syncGets$ = new Subject<any[]>();
+  private _syncing = false;
   private _modifyDate: Date;
   private _gets: (query: any) => Observable<any[]>;
   private _put: (data: any) => Observable<any>;
   private _post: (data: any) => Observable<any>;
-  private _syncing = false;
 
   constructor(
     private _store: Store<any>,
@@ -31,25 +31,9 @@ export class Remote<T> {
     }
 
     this._syncing = true;
-    const query = {
-      modifyDate: this._modifyDate,
-    };
 
-    return this._gets(query)
+    return this._syncGets()
       .pipe(
-        this._catchError(),
-        switchMap((data: any[]) => {
-          if(data?.length === 0) {
-            return of(null);
-          }
-
-          return this._syncGets(data)
-            .pipe(
-              tap(() => {
-                this._modifyDate = new Date();
-              }),
-            );
-        }),
         switchMap(() => this._syncSave()),
         finalize(() => this._syncing = false),
       );
@@ -76,7 +60,7 @@ export class Remote<T> {
   }
 
   private _syncSave(): Observable<void> {
-    if(!this._post || !this._put) {
+    if(!this._post && !this._put) {
       return of(null);
     }
 
@@ -86,11 +70,11 @@ export class Remote<T> {
       )
       .pipe(
         switchMap((data) => {
-          return  merge(
+          return  concat(
             ...data.map((item: Data<any>) => {
               return this._save(item)
                 .pipe(
-                  this._catchError(),
+                  this._catchError('Sync Save Error'),
                   switchMap((response) => {
                     response = {
                       ...response,
@@ -99,7 +83,7 @@ export class Remote<T> {
 
                     return this._store.storage.put(response);
                   }),
-                  this._catchError(),
+                  this._catchError('Sync Storage Put Error'),
                 );
             }),
           )
@@ -111,9 +95,9 @@ export class Remote<T> {
       );
   }
 
-  private _catchError() {
+  private _catchError(errorType) {
     return catchError((error) => {
-      console.error('Sync Save Error', error);
+      console.error(errorType, error);
 
       return of(null)
         .pipe(
@@ -122,35 +106,52 @@ export class Remote<T> {
     });
   }
 
-  private _syncGets(data: any[]) {
-    return merge(
-      ...data
-        .map((item) => this._store.storage.get(item[this._store.keyName])),
-    )
+  private _syncGets(): Observable<void> {
+    const query = {
+      modifyDate: this._modifyDate,
+    };
+
+    return this._gets(query)
       .pipe(
-        toArray(),
-        map((stoageData) => stoageData.reduce((accum, item) => {
-          return item ? {
-            ...accum,
-            [item[this._store.keyName]]: item,
-          } : accum;
-        }, {})),
-        switchMap((storageData: { [key: string]: any }) => {
-          const remoteData = data
-            .filter((item) => {
-              return !storageData[item[this._store.keyName]]?._revision;
-            })
-            .map((item) => this._store.storage.put(item));
+        this._catchError('Sync Gets Error'),
+        switchMap((data: any[]) => {
+          if(!data?.length) {
+            return of(null);
+          }
 
           return merge(
-            ...remoteData,
+            ...data
+              .map((item) => this._store.storage.get(item[this._store.keyName])),
           )
             .pipe(
               toArray(),
+              map((stoageData) => stoageData.reduce((accum, item) => {
+                return item ? {
+                  ...accum,
+                  [item[this._store.keyName]]: item,
+                } : accum;
+              }, {})),
+              switchMap((storageData: { [key: string]: any }) => {
+                const remoteData = data
+                  .filter((item) => {
+                    return !storageData[item[this._store.keyName]]?._revision;
+                  })
+                  .map((item) => this._store.storage.put(item));
+
+                return merge(
+                  ...remoteData,
+                )
+                  .pipe(
+                    toArray(),
+                  );
+              }),
             );
         }),
+        tap(() => {
+          this._modifyDate = new Date();
+        }),
+        mapTo(null),
       );
-
   }
 
 }
