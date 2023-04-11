@@ -145,7 +145,7 @@ export class GetComponent implements OnInit, OnDestroy {
   public post(): void {
     this._db.store(AccountStore)
       .put({
-        id: Math.floor(Math.random() * 100000),
+        id: String(Math.floor(Math.random() * 100000)),
         firstName: 'Luke',
         lastName: 'Skywalker',
         buildingId: 1,

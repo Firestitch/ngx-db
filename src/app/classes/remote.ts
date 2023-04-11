@@ -1,5 +1,5 @@
-import { Observable, Subject, merge, of } from 'rxjs';
-import { catchError, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
+import { Observable, Subject, merge, of, throwError } from 'rxjs';
+import { catchError, filter, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { Data, RemoteConfig } from '../interfaces';
 import { eq, not } from '../operators';
@@ -26,7 +26,7 @@ export class Remote<T> {
   }
 
   public sync(): Observable<void> {
-    if(this._syncing) {
+    if(this._syncing || !navigator.onLine) {
       return of(null);
     }
 
@@ -37,11 +37,7 @@ export class Remote<T> {
 
     return this._gets(query)
       .pipe(
-        catchError((error) => {
-          console.error(error);
-
-          return of(null);
-        }),
+        this._catchError(),
         switchMap((data: any[]) => {
           if(data?.length === 0) {
             return of(null);
@@ -49,14 +45,12 @@ export class Remote<T> {
 
           return this._syncGets(data)
             .pipe(
-              switchMap(() => this._syncPut()),
               tap(() => {
-
                 this._modifyDate = new Date();
               }),
             );
         }),
-        mapTo(null),
+        switchMap(() => this._syncSave()),
         finalize(() => this._syncing = false),
       );
   }
@@ -65,7 +59,27 @@ export class Remote<T> {
     return this._syncGets$.asObservable();
   }
 
-  private _syncPut() {
+  private _save(item): Observable<any> {
+    if(item._revision.number === 1) {
+      if(!this._post) {
+        return throwError('Remote post method not configured');
+      }
+
+      return this._post(item);
+    }
+
+    if(!this._put) {
+      return throwError('Remote put method not configured');
+    }
+
+    return this._put(item);
+  }
+
+  private _syncSave(): Observable<void> {
+    if(!this._post || !this._put) {
+      return of(null);
+    }
+
     return this._store
       .gets(
         not(eq('_revision', undefined)),
@@ -74,12 +88,9 @@ export class Remote<T> {
         switchMap((data) => {
           return  merge(
             ...data.map((item: Data<any>) => {
-              const save$ = (
-                item._revision.number === 1 ?
-                  this._post(item) :
-                  this._put(item)
-              )
+              return this._save(item)
                 .pipe(
+                  this._catchError(),
                   switchMap((response) => {
                     response = {
                       ...response,
@@ -88,15 +99,7 @@ export class Remote<T> {
 
                     return this._store.storage.put(response);
                   }),
-                );
-
-              return save$
-                .pipe(
-                  catchError((error) => {
-                    console.error('Sync Put Error', error);
-
-                    return of(null);
-                  }),
+                  this._catchError(),
                 );
             }),
           )
@@ -104,7 +107,19 @@ export class Remote<T> {
               toArray(),
             );
         }),
+        mapTo(null),
       );
+  }
+
+  private _catchError() {
+    return catchError((error) => {
+      console.error('Sync Save Error', error);
+
+      return of(null)
+        .pipe(
+          filter(() => false),
+        );
+    });
   }
 
   private _syncGets(data: any[]) {

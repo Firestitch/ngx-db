@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Observable, Subject,  concat,  of, throwError } from 'rxjs';
+import { Observable, Subject,  concat,  merge,  of, throwError } from 'rxjs';
 import { catchError, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
@@ -35,11 +35,14 @@ export class FsDb {
                 .map((store: Store<any>) => store.init()),
               ...Array.from(this._stores.values())
                 .map((store: Store<any>) => store.open()),
-              ...Array.from(this._stores.values())
-                .map((store: Store<any>) => store.initSync()),
             ],
           )
             .pipe(
+              toArray(),
+              switchMap(() => merge(
+                ...Array.from(this._stores.values())
+                  .map((store: Store<any>) => store.initSync()),
+              )),
               toArray(),
             );
         }),
@@ -47,15 +50,6 @@ export class FsDb {
           this._ready$.next(null);
           this._ready$.complete();
         }),
-        // switchMap(() => {
-        //   return concat(
-        //     ...Array.from(this._stores.values())
-        //       .map((store: Store<any>) => store.initSync()),
-        //   )
-        //     .pipe(
-        //       toArray(),
-        //     );
-        // }),
         catchError((error) => {
           this._ready$.error(error);
 

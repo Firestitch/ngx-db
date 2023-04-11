@@ -145,12 +145,12 @@ export abstract class Store<T> {
     const syncInterval = 10 * 1000;
     interval(syncInterval)
       .pipe(
+        switchMap(() => this.sync()),
         catchError((error) => {
           console.error('Sync Error', error);
 
           return of(null);
         }),
-        switchMap(() => this.sync()),
         takeUntil(this._destroy$),
       )
       .subscribe();
