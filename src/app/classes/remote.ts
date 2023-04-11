@@ -107,6 +107,10 @@ export class Remote<T> {
   }
 
   private _syncGets(): Observable<void> {
+    if(!this._gets) {
+      return of(null);
+    }
+
     const query = {
       modifyDate: this._modifyDate,
     };

@@ -6,7 +6,7 @@ import { Operator } from '../types';
 
 export abstract class Storage {
 
-  public abstract get(key: string): Observable<Data<any>>;
+  public abstract get(key: string | number): Observable<Data<any>>;
   public abstract gets(operators?: Operator[]): Observable<Data<any>[]>;
   public abstract put(item: Data<any>[] | Data<any>): Observable<void>;
   public abstract clear(): Observable<void>;

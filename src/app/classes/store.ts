@@ -120,7 +120,7 @@ export abstract class Store<T> {
       );
   }
 
-  public get(key: string): Observable<T> {
+  public get(key: string | number): Observable<T> {
     return this._storage.get(key);
   }
 
