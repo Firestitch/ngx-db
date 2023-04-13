@@ -150,11 +150,9 @@ export class IndexDb {
   }
 
   public close(): Observable<void> {
-    if(!this._db) {
-      return of(null);
-    }
-
-    this._db.close();
+    this._db?.close();
     this._db = null;
+
+    return of(null);
   }
 }

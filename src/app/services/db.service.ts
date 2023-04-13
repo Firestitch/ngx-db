@@ -100,12 +100,13 @@ export class FsDb {
     )
       .pipe(
         toArray(),
-        switchMap(() =>
-          concat(
+        switchMap(() => {
+
+          return concat(
             ...Array.from(this._stores.values())
               .map((store: Store<any>) => store.destroy()),
-          ),
-        ),
+          );
+        }),
         toArray(),
       );
   }
