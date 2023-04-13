@@ -106,6 +106,7 @@ export class FsDb {
               .map((store: Store<any>) => store.destroy()),
           ),
         ),
+        toArray(),
       );
   }
 

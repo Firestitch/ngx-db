@@ -62,9 +62,7 @@ export class IndexDbStorage extends Storage {
   }
 
   public close(): Observable<void> {
-    this._indexDB.close();
-
-    return of(null);
+    return this._indexDB.close();
   }
 
   public destroy(): Observable<void> {
