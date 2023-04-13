@@ -85,7 +85,7 @@ export class FsDb {
   }
 
   public clear(): Observable<any> {
-    return concat(
+    return merge(
       ...Array.from(this._stores.values())
         .map((store: Store<any>) => store.clear()),
     );
@@ -94,14 +94,10 @@ export class FsDb {
   public destroy(): Observable<any> {
     this.stopSync();
 
-    return concat(
-      ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.close()),
-    )
+    return this.close()
       .pipe(
         toArray(),
         switchMap(() => {
-
           return concat(
             ...Array.from(this._stores.values())
               .map((store: Store<any>) => store.destroy()),
@@ -117,7 +113,10 @@ export class FsDb {
     return concat(
       ...Array.from(this._stores.values())
         .map((store: Store<any>) => store.close()),
-    );
+    )
+      .pipe(
+        toArray(),
+      );
   }
 
   public get ready$() {
