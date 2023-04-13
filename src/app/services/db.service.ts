@@ -13,7 +13,7 @@ export class FsDb {
 
   private _stores = new Map<string,Store<any>>();
   private _ready$ = new Subject();
-  private _intervalSync$ = new Subject();
+  private _sync$ = new Subject();
   private _ready = false;
 
   public register(store: Store<any>): FsDb {
@@ -40,11 +40,6 @@ export class FsDb {
           )
             .pipe(
               toArray(),
-              switchMap(() => concat(
-                ...Array.from(this._stores.values())
-                  .map((store: Store<any>) => store.sync()),
-              )),
-              toArray(),
             );
         }),
         tap(() => {
@@ -70,7 +65,7 @@ export class FsDb {
   }
 
   public startSync(seconds): Observable<void> {
-    this._intervalSync$ = new Subject();
+    this._sync$ = new Subject();
 
     return interval(seconds * 1000)
       .pipe(
@@ -80,13 +75,13 @@ export class FsDb {
 
           return of(null);
         }),
-        takeUntil(this._intervalSync$),
+        takeUntil(this._sync$),
       );
   }
 
   public stopSync(): void {
-    this._intervalSync$.next();
-    this._intervalSync$.complete();
+    this._sync$.next();
+    this._sync$.complete();
   }
 
   public clear(): Observable<any> {
