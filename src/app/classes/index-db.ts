@@ -1,7 +1,7 @@
 import { Observable, Subscriber, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
-import { DbIterable, IndexDbIterable } from '../iterable';
+import { IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
 import { IndexDbDescribe } from '../interfaces';
 
@@ -127,14 +127,9 @@ export class IndexDb {
   }
 
   public data(store: string, operators: Operator[]): Observable<any[]> {
-    //return new Observable((observer: Subscriber<any>) => {
-
     const iterable = new IndexDbIterable(this._db, store, operators);
 
     return iterable.data$;
-    //  observer.next(iterable.data);
-    // observer.complete();
-    //});
   }
 
   public put(store, data): Observable<any> {

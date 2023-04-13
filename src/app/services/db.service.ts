@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-import { Observable, Subject,  concat,  merge,  of, throwError } from 'rxjs';
-import { catchError, switchMap, tap, toArray } from 'rxjs/operators';
+import { Observable, Subject,  concat,  interval,  merge,  of, throwError } from 'rxjs';
+import { catchError, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
 
@@ -13,6 +13,7 @@ export class FsDb {
 
   private _stores = new Map<string,Store<any>>();
   private _ready$ = new Subject();
+  private _intervalSync$ = new Subject();
   private _ready = false;
 
   public register(store: Store<any>): FsDb {
@@ -41,7 +42,7 @@ export class FsDb {
               toArray(),
               switchMap(() => concat(
                 ...Array.from(this._stores.values())
-                  .map((store: Store<any>) => store.initSync()),
+                  .map((store: Store<any>) => store.sync()),
               )),
               toArray(),
             );
@@ -68,10 +69,48 @@ export class FsDb {
       );
   }
 
+  public startSync(seconds): Observable<void> {
+    this._intervalSync$ = new Subject();
+
+    return interval(seconds * 1000)
+      .pipe(
+        switchMap(() => this.sync()),
+        catchError((error) => {
+          console.error('Sync Error', error);
+
+          return of(null);
+        }),
+        takeUntil(this._intervalSync$),
+      );
+  }
+
+  public stopSync(): void {
+    this._intervalSync$.next();
+    this._intervalSync$.complete();
+  }
+
   public clear(): Observable<any> {
     return concat(
       ...Array.from(this._stores.values())
         .map((store: Store<any>) => store.clear()),
+    );
+  }
+
+  public destroy(): Observable<any> {
+    this.stopSync();
+
+    return concat(
+      ...Array.from(this._stores.values())
+        .map((store: Store<any>) => store.destroy()),
+    );
+  }
+
+  public close(): Observable<any> {
+    this.stopSync();
+
+    return concat(
+      ...Array.from(this._stores.values())
+        .map((store: Store<any>) => store.close()),
     );
   }
 

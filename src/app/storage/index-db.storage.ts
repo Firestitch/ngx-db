@@ -1,10 +1,8 @@
 import { Observable, concat, of } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { map, mapTo, switchMap } from 'rxjs/operators';
 
 import { IndexDb, Store } from '../classes';
-import { DbIterable } from '../iterable';
 import { IndexDbDescribe } from '../interfaces';
-import { Operator } from '../types';
 
 import { Storage } from './storage';
 
@@ -60,6 +58,29 @@ export class IndexDbStorage extends Storage {
       .pipe (
         switchMap(() => this._indexDB.open()),
         map(() => null),
+      );
+  }
+
+  public close(): Observable<void> {
+    this._indexDB.close();
+
+    return of(null);
+  }
+
+  public destroy(): Observable<void> {
+    return this.close()
+      .pipe(
+        switchMap(() => this._indexDB.describe),
+        switchMap((indexDbDescribe: IndexDbDescribe) => {
+          const version = indexDbDescribe.version + 1;
+          const upgrade = (event: any) => {
+            const db = event.target.result;
+            db.deleteObjectStore(this._store.name);
+          };
+
+          return this._indexDB.upgrade(version, upgrade);
+        }),
+        mapTo(null),
       );
   }
 

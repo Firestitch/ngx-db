@@ -89,6 +89,14 @@ export class LocalStorage extends Storage {
     return of(null);
   }
 
+  public close(): Observable<void> {
+    return of(null);
+  }
+
+  public destroy(): Observable<void> {
+    return of(null);
+  }
+
   private _setItem(data): void {
     localStorage.setItem(this._store.name, JSON.stringify(data));
   }

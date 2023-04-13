@@ -58,4 +58,12 @@ export class MemoryStorage extends Storage {
     return of(null);
   }
 
+  public close(): Observable<void> {
+    return of(null);
+  }
+
+  public destroy(): Observable<void> {
+    return of(null);
+  }
+
 }

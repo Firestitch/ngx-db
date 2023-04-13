@@ -10,7 +10,6 @@ import { Remote } from './remote';
 
 export abstract class Store<T> {
 
-  private _destroy$ = new Subject();
   private _storage: Storage;
   private _remote: Remote<T>;
   private _changes$ = new Subject<Changes<T>>();
@@ -120,6 +119,10 @@ export abstract class Store<T> {
       );
   }
 
+  public destroy(): Observable<void> {
+    return this._storage.destroy();
+  }
+
   public get(key: string | number): Observable<T> {
     return this._storage.get(key);
   }
@@ -128,38 +131,16 @@ export abstract class Store<T> {
     return this._storage.gets(operators);
   }
 
-  public destroy(): void {
-    this._destroy$.next();
-    this._destroy$.complete();
-  }
-
   public init(): Observable<void> {
     return this._storage.init();
   }
 
-  public initSync(): Observable<void> {
-    if(!this._remote) {
-      return of(null);
-    }
-
-    const syncInterval = 10 * 1000;
-    interval(syncInterval)
-      .pipe(
-        switchMap(() => this.sync()),
-        catchError((error) => {
-          console.error('Sync Error', error);
-
-          return of(null);
-        }),
-        takeUntil(this._destroy$),
-      )
-      .subscribe();
-
-    return this.sync();
-  }
-
   public open(): Observable<void> {
     return this._storage.open();
+  }
+
+  public close(): Observable<void> {
+    return this._storage.close();
   }
 
   public sync(): Observable<void> {

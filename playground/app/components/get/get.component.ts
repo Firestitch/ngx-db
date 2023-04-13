@@ -72,6 +72,11 @@ export class GetComponent implements OnInit, OnDestroy {
       .register(new AccountStore({ remote: accountRemote }))
       .register(new BuildingStore({ remote: buildingRemote }))
       .init()
+      .pipe(
+        switchMap(() => {
+          return this._db.startSync(5);
+        }),
+      )
       .subscribe();
   }
 
@@ -180,6 +185,25 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
+  public destroy(): void {
+    this._db.destroy()
+      .subscribe(()=> {
+        this._message.success('Destroyed');
+      });
+  }
+
+  public startSync(): void {
+    this._db.startSync(5)
+      .subscribe(() => {
+        this._message.success('Started Sync');
+      });
+  }
+
+  public stopSync(): void {
+    this._db.stopSync();
+    this._message.success('Stopped Sync');
+  }
+
   public getKeys(): void {
     this._db.store(AccountStore)
       .keys()
@@ -202,7 +226,6 @@ export class GetComponent implements OnInit, OnDestroy {
         this._message.success();
       });
   }
-
 
   public getsLimit(): void {
     this._db.store(AccountStore)
