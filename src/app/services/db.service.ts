@@ -96,8 +96,17 @@ export class FsDb {
 
     return concat(
       ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.destroy()),
-    );
+        .map((store: Store<any>) => store.close()),
+    )
+      .pipe(
+        toArray(),
+        switchMap(() =>
+          concat(
+            ...Array.from(this._stores.values())
+              .map((store: Store<any>) => store.destroy()),
+          ),
+        ),
+      );
   }
 
   public close(): Observable<any> {
