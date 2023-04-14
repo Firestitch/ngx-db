@@ -2,7 +2,7 @@ import { Observable, concat, of } from 'rxjs';
 import { map, mapTo, switchMap } from 'rxjs/operators';
 
 import { IndexDb, Store } from '../classes';
-import { IndexDbDescribe } from '../interfaces';
+import { IndexDbDescribe, StoreIndex } from '../interfaces';
 
 import { Storage } from './storage';
 
@@ -94,9 +94,15 @@ export class IndexDbStorage extends Storage {
           const version = describe.version + 1;
           const upgrade = (event: any) => {
             const db = event.target.result;
-            db.createObjectStore(this._store.name, {
+            const objectStore = db.createObjectStore(this._store.name, {
               keyPath: this._store.keyName,
             });
+
+            (this._store.config.indexes || [])
+              .forEach((index: StoreIndex) => {
+                objectStore
+                  .createIndex(index.name, index.storeKey, { unique: !!index.unique });
+              });
           };
 
           return (new IndexDb()).upgrade(version, upgrade);

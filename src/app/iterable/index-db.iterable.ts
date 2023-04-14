@@ -1,9 +1,10 @@
-import { Observable, Subscriber, combineLatest, concat, forkJoin, merge, of } from 'rxjs';
-import { map, mergeScan, switchMap, tap } from 'rxjs/operators';
+import { parse } from '@firestitch/date';
+
+import { Observable, Subscriber, combineLatest, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
-import { Store } from '../classes';
 
 export class IndexDbIterable {
 
@@ -34,8 +35,19 @@ export class IndexDbIterable {
     const transaction = this._db.transaction(this._store, 'readonly');
     const objectStore = transaction.objectStore(this._store);
 
+    const keySortOperator = this._operators
+      .find((operator: any) => {
+        return operator.type === 'sort' && objectStore.indexNames.contains(operator().name);
+      });
+
+    let cursor: IDBObjectStore | IDBIndex = objectStore;
+    if(keySortOperator) {
+      const keySortConfig = keySortOperator();
+      cursor = objectStore.index(keySortConfig.name);
+    }
+
     return new Observable((observer: Subscriber<any>) => {
-      const request = objectStore.openCursor();
+      const request = cursor.openCursor();
       let index = 0;
 
       request.onsuccess = (event: any) => {
@@ -70,9 +82,42 @@ export class IndexDbIterable {
       };
     })
       .pipe(
+        tap(() => this._sort(keySortOperator)),
         switchMap(() => this._map()),
         map(() => this._data),
       );
+  }
+
+  private _sort(keySortOperator) {
+    const sortOperators = this._operators
+      .filter((operator: any) => {
+        return operator.type === 'sort' && keySortOperator !== operator;
+      });
+
+    if(sortOperators.length) {
+      sortOperators.forEach((sortOperator) => {
+        const sortOperatorConfig = sortOperator();
+        this._data = this._data
+          .sort((o1, o2) => {
+            if(sortOperatorConfig.type === 'numeric') {
+              return o1[sortOperatorConfig.name] - o2[sortOperatorConfig.name];
+            }
+
+            if(sortOperatorConfig.type === 'date') {
+              return parse(o1[sortOperatorConfig.name]).getTime() - parse(o2[sortOperatorConfig.name]).getTime();
+            }
+            const v1 = String(o1[sortOperatorConfig.name] || '');
+            const v2 = String(o2[sortOperatorConfig.name] || '');
+
+            return v1.localeCompare(v2);
+          });
+
+        if(sortOperatorConfig.direction === 'desc') {
+          this._data.reverse();
+        }
+
+      });
+    }
   }
 
   private _map(): Observable<any> {

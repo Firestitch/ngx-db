@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne } from '@firestitch/db';
+import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, sort } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
@@ -69,7 +69,13 @@ export class GetComponent implements OnInit, OnDestroy {
     };
 
     this._db
-      .register(new AccountStore({ remote: accountRemote }))
+      .register(new AccountStore({
+        remote: accountRemote,
+        indexes: [
+          { name: 'name', storeKey: 'name' },
+          //{ name: 'billingAddressId', type: 'date', },
+        ],
+      }))
       .register(new BuildingStore({ remote: buildingRemote }))
       .init()
       .pipe(
@@ -95,8 +101,7 @@ export class GetComponent implements OnInit, OnDestroy {
         takeUntil(this._destroy$),
       )
       .subscribe((values) => {
-        this.values = values;
-        this._cdRef.markForCheck();
+        this.setValues(values);
       });
   }
 
@@ -105,17 +110,57 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         eq('firstName', 'Billy'),
       )
-      .subscribe((data)=> {
-        this._message.success(JSON.stringify(data));
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public getSortName(): void {
+    this._db.store(AccountStore)
+      .gets(
+        sort('name'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public getSortBillingAddressId(): void {
+    this._db.store(AccountStore)
+      .gets(
+        sort('billingAddressId', 'numeric'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public getSortModifyDate(): void {
+    this._db.store(AccountStore)
+      .gets(
+        sort('name'),
+        sort('modifyDate','date', 'desc'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public getsMatch(): void {
+    this._db.store(AccountStore)
+      .gets(
+        match('firstName', 'b', 'i'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
       });
   }
 
   public getId(): void {
     this._db.store(AccountStore)
       .get(this.id)
-      .subscribe((data)=> {
-        console.log(data);
-        this._message.success(JSON.stringify(data));
+      .subscribe((values)=> {
+        this.setValues(values);
       });
   }
 
@@ -208,8 +253,7 @@ export class GetComponent implements OnInit, OnDestroy {
     this._db.store(AccountStore)
       .keys()
       .subscribe((values)=> {
-        this.values = values;
-        this._cdRef.markForCheck();
+        this.setValues(values);
         this._message.success();
       });
   }
@@ -221,9 +265,7 @@ export class GetComponent implements OnInit, OnDestroy {
         mapMany(this._db.store(BuildingStore), 'buildings', 'id', 'buildingId'),
       )
       .subscribe((values)=> {
-        this.values = values;
-        this._cdRef.markForCheck();
-        this._message.success();
+        this.setValues(values);
       });
   }
 
@@ -233,9 +275,7 @@ export class GetComponent implements OnInit, OnDestroy {
         limit(2, 2),
       )
       .subscribe((values)=> {
-        this.values = values;
-        this._cdRef.markForCheck();
-        this._message.success();
+        this.setValues(values);
       });
   }
 
@@ -243,5 +283,9 @@ export class GetComponent implements OnInit, OnDestroy {
     this._destroy$.next();
     this._destroy$.complete();
   }
-}
 
+  public setValues(values): void {
+    this.values = values;
+    this._cdRef.markForCheck();
+  }
+}

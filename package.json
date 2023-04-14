@@ -2,7 +2,7 @@
   "name": "@firestitch/db",
   "title": "DB",
   "description": "@firestitch/db",
-  "version": "12.0.21",
+  "version": "12.0.22",
   "repository": {
     "type": "git",
     "url": "https://github.com/Firestitch/ngx-db"
@@ -49,7 +49,7 @@
     "@firestitch/date": "^12.4.3",
     "@firestitch/label": "^12.0.0",
     "@firestitch/clear": "^12.2.1",
-    "@firestitch/common": "^12.0.0",
+    "@firestitch/common": "^12.5.2",
     "@firestitch/component-tools": "^12.0.13",
     "@firestitch/core": "^12.0.3",
     "@firestitch/datepicker": "^12.11.3",

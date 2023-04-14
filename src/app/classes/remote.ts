@@ -155,7 +155,7 @@ export class Remote<T> {
                   return of(null);
                 }
 
-                return concat(
+                return merge(
                   ...remoteData,
                 )
                   .pipe(

@@ -1,113 +1,153 @@
+<div class="container">
+  <div class="left">
+    <h2>Get</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="gets()">
+      All
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="gets()">
-  Gets
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getsLimit()">
+      Limit 2 Offset 2
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getKeys()">
+      Keys
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getId()">
+      ID 1
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getsBilly()">
+      Equals Billy
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getsMatch()">
+      Match 'b'
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getSortName()">
+      Sort Name
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getSortBillingAddressId()">
+      Sort Billing Address ID
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getSortModifyDate()">
+      Sort Modify Date
+    </a>
 
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="getsLimit()">
-  Gets Limit 2 Offset 2
-</a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="getKeys()">
-  Get Keys
-</a>
+    <h2>Put</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
+      John Doe
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
-  Put John Doe
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="put({ id: id, firstName: 'Billy', lastName: 'Bob' })">
+      Billy Bob
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="put({ id: id, firstName: 'Billy', lastName: 'Bob' })">
-  Put Billy Bob
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="putSusan()">
+      Susan
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="putSusan()">
-  Put Susan
-</a>
+    <h2>Post</h2>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="getId()">
-  Get ID 1
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="post()">
+      Post
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="getsBilly()">
-  Gets Billy
-</a>
+    <h2>Delete</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="deleteAll()">
+      Delete All
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="post()">
-  Post
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="deleteFirst()">
+      Delete First
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="deleteAll()">
-  Delete All
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="clear()">
+      Clear
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="deleteFirst()">
-  Delete First
-</a>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="destroy()">
+      Destroy
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="clear()">
-  Clear
-</a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="destroy()">
-  Destroy
-</a>
+    <h2>Sync</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="startSync()">
+      Start Sync
+    </a>
 
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="startSync()">
-  Start Sync
-</a>
-
-<a 
-    mat-raised-button 
-    color="primary" 
-    (click)="stopSync()">
-  Stop Sync
-</a>
-
-<fieldset>
-  <legend>
-    Values
-  </legend>
-  {{values|json}}
-</fieldset>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="stopSync()">
+      Stop Sync
+    </a>
+  </div>
+  <div class="right">
+    <fieldset>
+      <legend>
+        Values
+      </legend>
+      {{values|json}}
+    </fieldset>
+  </div>
+</div>
