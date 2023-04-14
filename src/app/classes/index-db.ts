@@ -155,4 +155,20 @@ export class IndexDb {
 
     return of(null);
   }
+
+  public destroyDatabase(): Observable<void> {
+    return new Observable((observer) => {
+      const request = window.indexedDB.deleteDatabase(this._dbName);
+
+      request.onerror = (event) => {
+        observer.error(event);
+      };
+
+      request.onsuccess = (event) => {
+        observer.next();
+        observer.complete();
+      };
+    });
+
+  }
 }

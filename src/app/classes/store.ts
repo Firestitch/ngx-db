@@ -120,6 +120,8 @@ export abstract class Store<T> {
   }
 
   public destroy(): Observable<void> {
+    this._remote?.destroy();
+
     return this._storage.destroy();
   }
 

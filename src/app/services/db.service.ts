@@ -55,7 +55,7 @@ export class FsDb {
   }
 
   public sync(): Observable<any> {
-    return concat(
+    return merge(
       ...Array.from(this._stores.values())
         .map((store: Store<any>) => store.sync()),
     )

@@ -43,6 +43,11 @@ export class Remote<T> {
     return this._syncGets$.asObservable();
   }
 
+  public destroy(): void {
+    this._modifyDate = null;
+    this._syncing = false;
+  }
+
   private _save(item): Observable<any> {
     if(item._revision.number === 1) {
       if(!this._post) {
@@ -129,18 +134,26 @@ export class Remote<T> {
           )
             .pipe(
               toArray(),
-              map((stoageData) => stoageData.reduce((accum, item) => {
-                return item ? {
-                  ...accum,
-                  [item[this._store.keyName]]: item,
-                } : accum;
-              }, {})),
+              map((stoageData) => {
+                stoageData = stoageData.reduce((accum, item) => {
+                  return item ? {
+                    ...accum,
+                    [item[this._store.keyName]]: item,
+                  } : accum;
+                }, {});
+
+                return stoageData;
+              }),
               switchMap((storageData: { [key: string]: any }) => {
                 const remoteData = data
                   .filter((item) => {
                     return !storageData[item[this._store.keyName]]?._revision;
                   })
                   .map((item) => this._store.storage.put(item));
+
+                if(remoteData.length === 0) {
+                  return of(null);
+                }
 
                 return merge(
                   ...remoteData,
