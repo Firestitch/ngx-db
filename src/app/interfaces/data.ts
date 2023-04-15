@@ -6,7 +6,7 @@
 
 
 export type Data<T> = {
-  _revision: {
+  _revision?: {
     date: Date;
     number: number;
   };

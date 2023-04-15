@@ -6,7 +6,7 @@ import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, sort } fr
 import { FsMessage } from '@firestitch/message';
 
 import { Subject, merge, of } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore } from 'playground/app/stores';
 import { AccountData, BuildingData } from 'playground/app/data';
@@ -31,11 +31,14 @@ export class GetComponent implements OnInit, OnDestroy {
     private _cdRef: ChangeDetectorRef,
   ) {
     const accountRemote: RemoteConfig = {
-      gets: (query) =>
+      gets: ({ limit, offset }) =>
         of(AccountData)
           .pipe(
+            map((data) => {
+              return [...data].slice(offset, offset + limit);
+            }),
             tap((_data) => {
-              console.log('Remote Gets', query);
+              console.log('Remote Gets', limit, offset);
             }),
           ),
       put: (data) => of(data)
@@ -72,7 +75,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .register(new AccountStore({
         remote: accountRemote,
         indexes: [
-          { name: 'name', storeKey: 'name' },
+          { name: 'name', keyName: 'name' },
           //{ name: 'billingAddressId', type: 'date', },
         ],
       }))
@@ -140,6 +143,16 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         sort('name'),
         sort('modifyDate','date', 'desc'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public count(): void {
+    this._db.store(AccountStore)
+      .count(
+        eq('firstName', 'Billy'),
       )
       .subscribe((values)=> {
         this.setValues(values);

@@ -101,7 +101,7 @@ export class IndexDbStorage extends Storage {
             (this._store.config.indexes || [])
               .forEach((index: StoreIndex) => {
                 objectStore
-                  .createIndex(index.name, index.storeKey, { unique: !!index.unique });
+                  .createIndex(index.name, index.keyName, { unique: !!index.unique });
               });
           };
 

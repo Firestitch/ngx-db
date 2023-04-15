@@ -12,6 +12,7 @@ export class Remote<T> {
   private _syncGets$ = new Subject<any[]>();
   private _syncing = false;
   private _modifyDate: Date;
+  private _limit: number;
   private _gets: (query: any) => Observable<any[]>;
   private _put: (data: any) => Observable<any>;
   private _post: (data: any) => Observable<any>;
@@ -23,6 +24,7 @@ export class Remote<T> {
     this._gets = this._config.gets;
     this._put = this._config.put;
     this._post = this._config.post;
+    this._limit = this._config.limit || 100;
   }
 
   public sync(): Observable<void> {
@@ -111,16 +113,44 @@ export class Remote<T> {
     });
   }
 
+  private _getAll(): Observable<any[]> {
+    const data = [];
+
+    return this._getPage(data, 0)
+      .pipe(
+        mapTo(data),
+      );
+  }
+
+  private _getPage(data, offset): Observable<void> {
+    const query = {
+      modifyDate: this._modifyDate,
+      limit: this._limit,
+      offset,
+    };
+
+    return this._gets(query)
+      .pipe(
+        switchMap((pageData) => {
+          data.push(...pageData);
+
+          if(pageData.length < this._limit) {
+            return of(null);
+          }
+
+          offset += this._limit;
+
+          return this._getPage(data, offset);
+        }),
+      );
+  }
+
   private _syncGets(): Observable<void> {
     if(!this._gets) {
       return of(null);
     }
 
-    const query = {
-      modifyDate: this._modifyDate,
-    };
-
-    return this._gets(query)
+    return this._getAll()
       .pipe(
         this._catchError('Sync Gets Error'),
         switchMap((data: any[]) => {

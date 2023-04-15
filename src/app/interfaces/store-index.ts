@@ -1,7 +1,7 @@
 
 export interface StoreIndex {
   name: string;
-  storeKey: string;
+  keyName: string;
   unique?: boolean;
 }
 

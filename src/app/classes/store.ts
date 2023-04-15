@@ -54,7 +54,9 @@ export abstract class Store<T> {
   public count(...operators: Operator[]): Observable<number> {
     return this.gets(...operators)
       .pipe(
-        map((data) => data.length),
+        map((data) => {
+          return data.length;
+        }),
       );
   }
 
