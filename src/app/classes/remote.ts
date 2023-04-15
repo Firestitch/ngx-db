@@ -13,7 +13,7 @@ export class Remote<T> {
   private _syncing = false;
   private _modifyDate: Date;
   private _limit: number;
-  private _gets: (query: any) => Observable<any[]>;
+  private _gets: (query: { limit: number; offset: number; modifyDate: Date }) => Observable<any[]>;
   private _put: (data: any) => Observable<any>;
   private _post: (data: any) => Observable<any>;
 
