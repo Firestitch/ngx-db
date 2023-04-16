@@ -4,11 +4,12 @@ import {
 
 import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, sort } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
+import { guid } from '@firestitch/common';
 
 import { Subject, merge, of } from 'rxjs';
 import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
-import { BuildingStore, AccountStore } from 'playground/app/stores';
+import { BuildingStore, AccountStore, FileStore } from 'playground/app/stores';
 import { AccountData, BuildingData } from 'playground/app/data';
 
 
@@ -80,6 +81,19 @@ export class GetComponent implements OnInit, OnDestroy {
         ],
       }))
       .register(new BuildingStore({ remote: buildingRemote }))
+      .register(new FileStore({
+        remote: {
+          post: (data) => of(data)
+            .pipe(
+              tap((_data) => {
+                console.log('Remote Post', _data);
+              }),
+            ),
+        },
+        storage: {
+          type: 'memory',
+        },
+      }))
       .init()
       .pipe(
         switchMap(() => {
@@ -212,6 +226,17 @@ export class GetComponent implements OnInit, OnDestroy {
         firstName: 'Luke',
         lastName: 'Skywalker',
         buildingId: 1,
+      })
+      .subscribe(()=> {
+        this._message.success('Saved');
+      });
+  }
+
+  public filePost(): void {
+    this._db.store(FileStore)
+      .put({
+        guid: guid(),
+        file: new File([], 'filename.jpg'),
       })
       .subscribe(()=> {
         this._message.success('Saved');

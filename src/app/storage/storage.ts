@@ -2,9 +2,14 @@ import { Observable } from 'rxjs';
 
 import { Data } from '../interfaces';
 import { Operator } from '../types';
+import { Store } from '../classes';
 
 
 export abstract class Storage {
+
+  constructor(
+    protected _store: Store<any>,
+  ) {}
 
   public abstract get(key: string | number): Observable<Data<any>>;
   public abstract gets(operators?: Operator[]): Observable<Data<any>[]>;

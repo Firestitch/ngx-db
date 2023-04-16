@@ -1,7 +1,7 @@
 import { Observable, concat, of } from 'rxjs';
 import { map, mapTo, switchMap } from 'rxjs/operators';
 
-import { IndexDb, Store } from '../classes';
+import { IndexDb } from '../classes';
 import { IndexDbDescribe, StoreIndex } from '../interfaces';
 
 import { Storage } from './storage';
@@ -10,12 +10,6 @@ import { Storage } from './storage';
 export class IndexDbStorage extends Storage {
 
   private _indexDB = new IndexDb();
-
-  constructor(
-    private _store: Store<any>,
-  ) {
-    super();
-  }
 
   public gets(operators: any[]): Observable<any[]> {
     return this._indexDB.data(this._store.name, operators);

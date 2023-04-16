@@ -5,6 +5,8 @@ import { IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
 import { IndexDbDescribe } from '../interfaces';
 
+import { OperatorData } from './operator-data';
+
 
 export class IndexDb {
 
@@ -127,7 +129,8 @@ export class IndexDb {
   }
 
   public data(store: string, operators: Operator[]): Observable<any[]> {
-    const iterable = new IndexDbIterable(this._db, store, operators);
+    const operatorData = new OperatorData(operators);
+    const iterable = new IndexDbIterable(this._db, store, operatorData);
 
     return iterable.data$;
   }

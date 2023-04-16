@@ -1,8 +1,8 @@
 import { Observable, Subject, interval, of } from 'rxjs';
 import {  catchError, map,  switchMap, takeUntil, tap } from 'rxjs/operators';
 
-import { IndexDbStorage, Storage } from '../storage';
-import { Changes, Data, StoreConfig } from '../interfaces';
+import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
+import { Changes, Data, StorageConfig, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
 
 import { Remote } from './remote';
@@ -20,10 +20,28 @@ export abstract class Store<T> {
   constructor(
     private _config: StoreConfig,
   ) {
-    this._storage = this.config?.storage ?? new IndexDbStorage(this);
+    this._config = this._config || {};
+    this._storage = this.createStorage(this);
 
     if(_config.remote) {
       this._remote = new Remote<T>(this, _config.remote);
+    }
+  }
+
+  public createStorage(store): Storage {
+    this.config.storage = this.config.storage || {
+      type: 'indexDb',
+    };
+
+    switch(this._config.storage.type) {
+      case 'indexDb':
+        return new IndexDbStorage(store);
+
+      case 'memory':
+        return new MemoryStorage(store);
+
+      case 'localStorage':
+        return new LocalStorage(store);
     }
   }
 

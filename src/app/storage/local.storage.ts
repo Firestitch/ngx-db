@@ -1,18 +1,11 @@
 import { Observable, Subject, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
-import { Store } from '../classes';
 
 import { Storage } from './storage';
 
 
 export class LocalStorage extends Storage {
-
-  constructor(
-    private _store: Store<any>,
-  ) {
-    super();
-  }
 
   public gets(operators: any[]): Observable<any> {
     return of(null);

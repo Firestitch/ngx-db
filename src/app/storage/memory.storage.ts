@@ -1,6 +1,7 @@
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
-import { Store } from '../classes';
+import { OperatorData } from '../classes';
+import { Data } from '../interfaces';
 
 import { Storage } from './storage';
 
@@ -9,21 +10,24 @@ export class MemoryStorage extends Storage {
 
   private _data = {};
 
-  constructor(
-    private _store: Store<any>,
-  ) {
-    super();
-  }
-
   public gets(operators: any[]): Observable<any> {
-    return of(null);
+    const operatorData = new OperatorData(operators);
+    const data = Object.values(this._data)
+      .filter((item: any, index: number) => {
+        return operatorData.match(item, index);
+      });
+
+    return of(data);
   }
 
-  public put(item: any): Observable<void> {
-    this._data = {
-      ...this.data,
-      [this._store.keyName]: item,
-    };
+  public put(data: Data<any>[] | Data<any>): Observable<void> {
+    data = Array.isArray(data) ? data : [data];
+    data.forEach((item) => {
+      this._data = {
+        ...this.data,
+        [item[this._store.keyName]]: item,
+      };
+    });
 
     return of(null);
   }

@@ -5,39 +5,26 @@ import { map, switchMap, tap } from 'rxjs/operators';
 
 import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
+import { OperatorData } from '../classes';
 
 export class IndexDbIterable {
 
   private _data = [];
-  private _filters = [];
-  private _limit: {
-    offset: number;
-    limit: number;
-    count: number;
-  };
 
   constructor(
     private _db: IDBDatabase,
     private _store: string,
-    private _operators: Operator[],
+    private _operatorData: OperatorData,
   ) {
-    const limitOperator = this._operators
-      .find((operator: Operator) => (operator as any).type === 'limit');
-
-    this._limit = limitOperator ? limitOperator() : null;
-    this._filters = this._operators
-      .filter((operator: any) => {
-        return operator.type === 'filter';
-      });
   }
 
   public get data$(): Observable<any> {
     const transaction = this._db.transaction(this._store, 'readonly');
     const objectStore = transaction.objectStore(this._store);
 
-    const keySortOperator = this._operators
+    const keySortOperator = this._operatorData.sortOperators
       .find((operator: any) => {
-        return operator.type === 'sort' && objectStore.indexNames.contains(operator().name);
+        return objectStore.indexNames.contains(operator().name);
       });
 
     let cursor: IDBObjectStore | IDBIndex = objectStore;
@@ -56,21 +43,20 @@ export class IndexDbIterable {
         }
 
         const value = event.target.result.value;
-
-        const match = this._filters.length === 0 ||
-          this._filters.every((operator: Operator) => {
-            return operator(value, index, length);
-          });
+        const match = this._operatorData.match(value, index);
 
         if(match) {
-          if(!this._limit || index >= this._limit.offset) {
+          if(!this._operatorData.limit || index >= this._operatorData.limit.offset) {
             this._data.push(value);
           }
 
           index++;
         }
 
-        if(this._limit && this._limit.count === index - this._limit.offset) {
+        if(
+          this._operatorData.limit &&
+          this._operatorData.limit.count === index - this._operatorData.limit.offset
+        ) {
           return this._complete(observer);
         }
 
@@ -89,9 +75,9 @@ export class IndexDbIterable {
   }
 
   private _sort(keySortOperator) {
-    const sortOperators = this._operators
+    const sortOperators = this._operatorData.sortOperators
       .filter((operator: any) => {
-        return operator.type === 'sort' && keySortOperator !== operator;
+        return keySortOperator !== operator;
       });
 
     if(sortOperators.length) {
@@ -115,22 +101,14 @@ export class IndexDbIterable {
         if(sortOperatorConfig.direction === 'desc') {
           this._data.reverse();
         }
-
       });
     }
   }
 
   private _map(): Observable<any> {
-    const mapOperators = this._operators
+    const mapOperators = this._operatorData.mapOneOperators
       .map((operator: () => MapOneOperator) => {
-        switch(operator.name) {
-          case 'mapOne':
-            return this._mapOne(operator());
-          // case 'mapMany':
-          //   return this._mapMany(operator());
-        }
-
-        return null;
+        return this._mapOne(operator());
       })
       .filter((value) => !!value);
 
@@ -172,51 +150,5 @@ export class IndexDbIterable {
 
   }
 
-  // private _mapMany(mapOne: MapOneOperator): Observable<any> {
-  //   const references = [
-  //     ...new Set(this._data
-  //       .map((item) => item[mapOne.referenceName])),
-  //   ]
-  //     .filter((item) => !!item);
-
-  //   return (mapOne.store).gets(
-  //     includes(mapOne.foreignReferenceName, references),
-  //   )
-  //     .pipe(
-  //       tap((data) => {
-  //         data = data
-  //           .reduce((accum, item) => {
-  //             return {
-  //               ...accum,
-  //               [item[mapOne.foreignReferenceName]]: item,
-  //             };
-  //           }, {});
-
-  //         this._data
-  //           .forEach((item) => {
-  //             const key = item[mapOne.referenceName];
-  //             item[mapOne.propertyName] = data[key];
-  //           });
-
-
-  //         // } else if(mapOperator.type === 'mapMany') {
-  //         //   data = data
-  //         //     .reduce((accum, item) => {
-  //         //       return {
-  //         //         ...accum,
-  //         //         [item[mapConfig.foreignReferenceName]]: item,
-  //         //       };
-  //         //     }, {});
-
-  //         //   this._data
-  //         //     .forEach((item) => {
-  //         //       const key = item[mapConfig.referenceName];
-  //         //       item[mapConfig.propertyName] = data[key];
-  //         //     });
-  //         // }
-  //       }),
-  //     );
-
-  // }
 }
 
