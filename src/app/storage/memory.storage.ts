@@ -24,7 +24,7 @@ export class MemoryStorage extends Storage {
     data = Array.isArray(data) ? data : [data];
     data.forEach((item) => {
       this._data = {
-        ...this.data,
+        ...this._data,
         [item[this._store.keyName]]: item,
       };
     });

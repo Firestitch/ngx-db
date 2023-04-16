@@ -73,14 +73,14 @@ export class GetComponent implements OnInit, OnDestroy {
     };
 
     this._db
-      .register(new AccountStore({
-        remote: accountRemote,
-        indexes: [
-          { name: 'name', keyName: 'name' },
-          //{ name: 'billingAddressId', type: 'date', },
-        ],
-      }))
-      .register(new BuildingStore({ remote: buildingRemote }))
+      // .register(new AccountStore({
+      //   remote: accountRemote,
+      //   indexes: [
+      //     { name: 'name', keyName: 'name' },
+      //     //{ name: 'billingAddressId', type: 'date', },
+      //   ],
+      // }))
+      // .register(new BuildingStore({ remote: buildingRemote }))
       .register(new FileStore({
         remote: {
           post: (data) => of(data)
