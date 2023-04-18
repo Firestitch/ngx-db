@@ -74,7 +74,11 @@ export class IndexDb {
       );
   }
 
-  public get(store: string, id): Observable<any> {
+  public get(store: string, id: string | number): Observable<any> {
+    if(id === null || id === undefined) {
+      return of(null);
+    }
+
     return new Observable((observer) => {
       const transaction = this._db.transaction(store, 'readonly');
       const objectStore = transaction.objectStore(store);

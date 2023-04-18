@@ -40,7 +40,7 @@ export class IndexDbStorage extends Storage {
     return this._indexDB.delete(this._store.name, keys);
   }
 
-  public get(key: string): Observable<any> {
+  public get(key: string | number): Observable<any> {
     return this._indexDB.get(this._store.name, key)
       .pipe(
         map((data) => data || null),
