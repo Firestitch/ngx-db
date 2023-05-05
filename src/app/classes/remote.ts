@@ -151,8 +151,8 @@ export class Remote<T> {
       );
   }
 
-  private _save(item): Observable<any> {
-    if(item._sync.number === 1) {
+  private _save(item: Data<unknown>): Observable<any> {
+    if(item._sync.revision === 1) {
       if(!this._post) {
         return throwError('Remote post method not configured');
       }

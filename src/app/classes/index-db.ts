@@ -22,8 +22,6 @@ export class IndexDb {
       upgrade?: (event: IDBVersionChangeEvent) => void;
     },
   ): Observable<IDBDatabase> {
-    console.log('open');
-
     return new Observable((observer) => {
       this._request = window.indexedDB.open(this._dbName, config?.version);
 
