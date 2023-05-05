@@ -95,12 +95,14 @@ export class GetComponent implements OnInit, OnDestroy {
         },
       }))
       .init()
-      .pipe(
-        switchMap(() => {
-          return this._db.startSync(5);
-        }),
-      )
-      .subscribe();
+      // .pipe(
+      //   switchMap(() => {
+      //     return this._db.startSync(5);
+      //   }),
+      // )
+      .subscribe(() => {
+        this._message.info('Ready!');
+      });
   }
 
   public ngOnInit(): void {

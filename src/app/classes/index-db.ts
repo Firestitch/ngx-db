@@ -1,5 +1,5 @@
-import { Observable, Subscriber, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { Observable, Subscriber, concat, of } from 'rxjs';
+import { finalize, map, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
@@ -22,6 +22,8 @@ export class IndexDb {
       upgrade?: (event: IDBVersionChangeEvent) => void;
     },
   ): Observable<IDBDatabase> {
+    console.log('open');
+
     return new Observable((observer) => {
       this._request = window.indexedDB.open(this._dbName, config?.version);
 
@@ -41,6 +43,9 @@ export class IndexDb {
   public get describe(): Observable<IndexDbDescribe> {
     return this.open()
       .pipe(
+        tap((db: IDBDatabase) => {
+          db.close();
+        }),
         map((db: IDBDatabase) => {
           return {
             version: db.version,
@@ -56,7 +61,12 @@ export class IndexDb {
   ): Observable<any> {
     return this.open({
       version, upgrade,
-    });
+    })
+      .pipe(
+        tap((db: IDBDatabase) => {
+          db.close();
+        }),
+      );
   }
 
   public get(store: string, id: string | number): Observable<any> {
@@ -67,7 +77,6 @@ export class IndexDb {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
-
           return new Observable((observer) => {
             const transaction = db.transaction(store, 'readonly');
             const objectStore = transaction.objectStore(store);
@@ -81,7 +90,12 @@ export class IndexDb {
             request.onerror = (event) => {
               observer.error(event);
             };
-          });
+          })
+            .pipe(
+              finalize(() => {
+                db.close();
+              }),
+            );
         }),
       );
   }
@@ -103,7 +117,12 @@ export class IndexDb {
             request.onerror = (event) => {
               observer.error(event);
             };
-          });
+          })
+            .pipe(
+              finalize(() => {
+                db.close();
+              }),
+            );
         }),
       );
   }
@@ -112,11 +131,12 @@ export class IndexDb {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
-          return new Observable((observer) => {
-            const transaction = db.transaction(store, 'readwrite');
-            const objectStore = transaction.objectStore(store);
-            keys = Array.isArray(keys) ? keys : [keys];
-            keys.forEach((key) => {
+          const transaction = db.transaction(store, 'readwrite');
+          const objectStore = transaction.objectStore(store);
+          keys = Array.isArray(keys) ? keys : [keys];
+
+          return concat(...keys.map((key) => {
+            return new Observable((observer) => {
               const request = objectStore.delete(key);
 
               request.onsuccess = () => {
@@ -127,8 +147,14 @@ export class IndexDb {
               request.onerror = (event) => {
                 observer.error(event);
               };
+
             });
-          });
+          }))
+            .pipe(
+              toArray(),
+              finalize(() => db.close()),
+            );
+
         }),
       );
   }
@@ -140,7 +166,10 @@ export class IndexDb {
           const operatorData = new OperatorData(operators);
           const iterable = new IndexDbIterable(db, store, operatorData);
 
-          return iterable.data$;
+          return iterable.data$
+            .pipe(
+              tap(() =>db.close()),
+            );
         }),
       );
   }
@@ -162,7 +191,10 @@ export class IndexDb {
             request.onerror = (event) => {
               observer.error(event);
             };
-          });
+          })
+            .pipe(
+              finalize(() => db.close()),
+            );
         }),
       );
   }

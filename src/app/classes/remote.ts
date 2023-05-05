@@ -39,24 +39,6 @@ export class Remote<T> {
     this._syncing = false;
   }
 
-  // public sync(): Observable<void> {
-  //   if(this._syncing || !navigator.onLine) {
-  //     return of(null);
-  //   }
-
-  //   this._syncing = true;
-
-  //   return this._syncGets()
-  //     .pipe(
-  //       switchMap(() => this._syncSave()),
-  //       finalize(() => this._syncing = false),
-  //     );
-  // }
-
-  // public get sync$(): Observable<any[]> {
-  //   return this._syncGets$.asObservable();
-  // }
-
   public destroy(): void {
     this._modifyDate = null;
     this._syncing = false;
