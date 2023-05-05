@@ -53,15 +53,14 @@ export class Remote<T> {
   //     );
   // }
 
-  public get sync$(): Observable<any[]> {
-    return this._syncGets$.asObservable();
-  }
+  // public get sync$(): Observable<any[]> {
+  //   return this._syncGets$.asObservable();
+  // }
 
   public destroy(): void {
     this._modifyDate = null;
     this._syncing = false;
   }
-
 
   public syncGet(): Observable<void> {
     if(!this._gets) {
@@ -137,7 +136,11 @@ export class Remote<T> {
       )
       .pipe(
         switchMap((data) => {
-          return  concat(
+          if(!data?.length) {
+            return of(null);
+          }
+
+          return concat(
             ...data.map((item: Data<any>) => {
               return this._save(item)
                 .pipe(
