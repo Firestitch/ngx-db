@@ -90,14 +90,14 @@ export abstract class Store<T> {
   public put(data: Data<T> | Data<T>[]): Observable<void> {
     data = (Array.isArray(data) ? data : [data])
       .map((item) => {
-        const _revision = {
-          number: Number(item._revision?.number || 0) + 1,
+        const _sync = {
+          revision: Number(item._sync?.revision || 0) + 1,
           date: new Date(),
         };
 
         return {
           ...item,
-          _revision,
+          _sync,
         };
       });
 
@@ -165,7 +165,11 @@ export abstract class Store<T> {
     return this._storage.close();
   }
 
-  public sync(): Observable<void> {
-    return this._remote ? this._remote.sync() : of(null);
+  public syncGet(): Observable<void> {
+    return this._remote ? this._remote.syncGet() : of(null);
+  }
+
+  public syncSave(): Observable<void> {
+    return this._remote ? this._remote.syncSave() : of(null);
   }
 }

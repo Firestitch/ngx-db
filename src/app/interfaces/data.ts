@@ -1,13 +1,8 @@
 
-// export interface Data<T> & {
-//   date: Date;
-//   number: number;
-// } & T
-
-
 export type Data<T> = {
-  _revision?: {
+  _sync?: {
     date: Date;
-    number: number;
+    revision: number;
+    message?: string;
   };
 } & T;

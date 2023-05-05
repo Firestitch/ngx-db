@@ -55,11 +55,17 @@ export class FsDb {
   }
 
   public sync(): Observable<any> {
-    return concat(
-      ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.sync()),
+    const stores = Array.from(this._stores.values());
+
+    return merge(
+      ...stores
+        .map((store: Store<any>) => store.syncGet()),
     )
       .pipe(
+        toArray(),
+        switchMap(() => concat(...stores
+          .map((store: Store<any>) => store.syncSave()),
+        )),
         toArray(),
       );
   }

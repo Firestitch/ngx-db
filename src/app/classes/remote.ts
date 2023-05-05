@@ -27,19 +27,31 @@ export class Remote<T> {
     this._limit = this._config.limit || 100;
   }
 
-  public sync(): Observable<void> {
+  public startSync(): boolean {
     if(this._syncing || !navigator.onLine) {
-      return of(null);
+      return false;
     }
 
     this._syncing = true;
-
-    return this._syncGets()
-      .pipe(
-        switchMap(() => this._syncSave()),
-        finalize(() => this._syncing = false),
-      );
   }
+
+  public endSync(): void {
+    this._syncing = false;
+  }
+
+  // public sync(): Observable<void> {
+  //   if(this._syncing || !navigator.onLine) {
+  //     return of(null);
+  //   }
+
+  //   this._syncing = true;
+
+  //   return this._syncGets()
+  //     .pipe(
+  //       switchMap(() => this._syncSave()),
+  //       finalize(() => this._syncing = false),
+  //     );
+  // }
 
   public get sync$(): Observable<any[]> {
     return this._syncGets$.asObservable();
@@ -50,105 +62,13 @@ export class Remote<T> {
     this._syncing = false;
   }
 
-  private _save(item): Observable<any> {
-    if(item._revision.number === 1) {
-      if(!this._post) {
-        return throwError('Remote post method not configured');
-      }
 
-      return this._post(item);
-    }
-
-    if(!this._put) {
-      return throwError('Remote put method not configured');
-    }
-
-    return this._put(item);
-  }
-
-  private _syncSave(): Observable<void> {
-    if(!this._post && !this._put) {
-      return of(null);
-    }
-
-    return this._store
-      .gets(
-        not(eq('_revision', undefined)),
-      )
-      .pipe(
-        switchMap((data) => {
-          return  concat(
-            ...data.map((item: Data<any>) => {
-              return this._save(item)
-                .pipe(
-                  this._catchError('Sync Save Error'),
-                  switchMap((response) => {
-                    response = {
-                      ...response,
-                      _revision: undefined,
-                    };
-
-                    return this._store.storage.put(response);
-                  }),
-                  this._catchError('Sync Storage Put Error'),
-                );
-            }),
-          )
-            .pipe(
-              toArray(),
-            );
-        }),
-        mapTo(null),
-      );
-  }
-
-  private _catchError(errorType) {
-    return catchError((error) => {
-      console.error(errorType, error);
-
-      return of(null)
-        .pipe(
-          filter(() => false),
-        );
-    });
-  }
-
-  private _getAll(): Observable<any[]> {
-    const data = [];
-
-    return this._getPage(data, 0)
-      .pipe(
-        mapTo(data),
-      );
-  }
-
-  private _getPage(data, offset): Observable<void> {
-    const query = {
-      modifyDate: this._modifyDate,
-      limit: this._limit,
-      offset,
-    };
-
-    return this._gets(query)
-      .pipe(
-        switchMap((pageData) => {
-          data.push(...pageData);
-
-          if(pageData.length < this._limit) {
-            return of(null);
-          }
-
-          offset += this._limit;
-
-          return this._getPage(data, offset);
-        }),
-      );
-  }
-
-  private _syncGets(): Observable<void> {
+  public syncGet(): Observable<void> {
     if(!this._gets) {
       return of(null);
     }
+
+    this.startSync();
 
     return this._getAll()
       .pipe(
@@ -177,7 +97,7 @@ export class Remote<T> {
               switchMap((storageData: { [key: string]: any }) => {
                 const remoteData = data
                   .filter((item) => {
-                    return !storageData[item[this._store.keyName]]?._revision;
+                    return !storageData[item[this._store.keyName]]?._sync;
                   })
                   .map((item) => this._store.storage.put(item));
 
@@ -198,6 +118,105 @@ export class Remote<T> {
           this._modifyDate = new Date();
         }),
         mapTo(null),
+        finalize(() => {
+          this.endSync();
+        }),
+      );
+  }
+
+  public syncSave(): Observable<void> {
+    if(!this._post && !this._put) {
+      return of(null);
+    }
+
+    this.startSync();
+
+    return this._store
+      .gets(
+        not(eq('_sync', undefined)),
+      )
+      .pipe(
+        switchMap((data) => {
+          return  concat(
+            ...data.map((item: Data<any>) => {
+              return this._save(item)
+                .pipe(
+                  this._catchError('Sync Save Error'),
+                  switchMap((response) => {
+                    response = {
+                      ...response,
+                    };
+
+                    delete response._sync;
+
+                    return this._store.storage.put(response);
+                  }),
+                  this._catchError('Sync Storage Put Error'),
+                );
+            }),
+          )
+            .pipe(
+              toArray(),
+            );
+        }),
+        mapTo(null),
+        finalize(() => {
+          this.endSync();
+        }),
+      );
+  }
+
+  private _save(item): Observable<any> {
+    if(item._sync.number === 1) {
+      if(!this._post) {
+        return throwError('Remote post method not configured');
+      }
+
+      return this._post(item);
+    }
+
+    if(!this._put) {
+      return throwError('Remote put method not configured');
+    }
+
+    return this._put(item);
+  }
+
+  private _catchError(errorType) {
+    return catchError((error) => {
+      console.error(errorType, error);
+
+      return of(null)
+        .pipe(
+          filter(() => false),
+        );
+    });
+  }
+
+  private _getAll(): Observable<any[]> {
+    return this._getPage([], 0);
+  }
+
+  private _getPage(data, offset): Observable<any[]> {
+    const query = {
+      modifyDate: this._modifyDate,
+      limit: this._limit,
+      offset,
+    };
+
+    return this._gets(query)
+      .pipe(
+        switchMap((pageData) => {
+          data.push(...pageData);
+
+          if(pageData.length < this._limit) {
+            return of(data);
+          }
+
+          offset += this._limit;
+
+          return this._getPage(data, offset);
+        }),
       );
   }
 
