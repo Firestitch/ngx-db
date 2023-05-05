@@ -55,14 +55,9 @@ export class IndexDbStorage extends Storage {
       );
   }
 
-  public close(): Observable<void> {
-    return this._indexDB.close();
-  }
-
   public destroy(): Observable<void> {
-    return this.close()
+    return this._indexDB.describe
       .pipe(
-        switchMap(() => this._indexDB.describe),
         switchMap((indexDbDescribe: IndexDbDescribe) => {
           const version = indexDbDescribe.version + 1;
           const upgrade = (event: any) => {

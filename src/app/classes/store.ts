@@ -161,10 +161,6 @@ export abstract class Store<T> {
     return this._storage.open();
   }
 
-  public close(): Observable<void> {
-    return this._storage.close();
-  }
-
   public syncGet(): Observable<void> {
     return this._remote ? this._remote.syncGet() : of(null);
   }

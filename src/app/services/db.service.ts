@@ -100,25 +100,9 @@ export class FsDb {
   public destroy(): Observable<any> {
     this.stopSync();
 
-    return this.close()
-      .pipe(
-        toArray(),
-        switchMap(() => {
-          return concat(
-            ...Array.from(this._stores.values())
-              .map((store: Store<any>) => store.destroy()),
-          );
-        }),
-        toArray(),
-      );
-  }
-
-  public close(): Observable<any> {
-    this.stopSync();
-
     return concat(
       ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.close()),
+        .map((store: Store<any>) => store.destroy()),
     )
       .pipe(
         toArray(),

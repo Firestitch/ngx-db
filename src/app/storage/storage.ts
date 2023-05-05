@@ -18,7 +18,6 @@ export abstract class Storage {
   public abstract delete(keys: string[]): Observable<void>;
   public abstract init(): Observable<void>;
   public abstract open(): Observable<void>;
-  public abstract close(): Observable<void>;
   public abstract destroy(): Observable<void>;
 
 }

@@ -11,7 +11,6 @@ import { OperatorData } from './operator-data';
 export class IndexDb {
 
   private _request: IDBOpenDBRequest;
-  private _db: IDBDatabase;
 
   constructor(
     private _dbName: string = 'fsDb',
@@ -29,13 +28,11 @@ export class IndexDb {
       this._request.onupgradeneeded = config?.upgrade;
 
       this._request.onsuccess = (event: any) => {
-        this._db = event.target.result;
-        observer.next(this._db);
+        observer.next(event.target.result);
         observer.complete();
       };
 
       this._request.onerror = (event: any) => {
-        this._db = null;
         observer.error(event);
       };
     });
@@ -50,11 +47,6 @@ export class IndexDb {
             objectStoreNames: Array.from(db.objectStoreNames),
           };
         }),
-        switchMap((describe: IndexDbDescribe) => {
-          this.close();
-
-          return of(describe);
-        }),
       );
   }
 
@@ -64,14 +56,7 @@ export class IndexDb {
   ): Observable<any> {
     return this.open({
       version, upgrade,
-    })
-      .pipe(
-        switchMap(() => {
-          this.close();
-
-          return of(null);
-        }),
-      );
+    });
   }
 
   public get(store: string, id: string | number): Observable<any> {
@@ -79,88 +64,107 @@ export class IndexDb {
       return of(null);
     }
 
-    return new Observable((observer) => {
-      const transaction = this._db.transaction(store, 'readonly');
-      const objectStore = transaction.objectStore(store);
-      const request = objectStore.get(id);
+    return this.open()
+      .pipe(
+        switchMap((db: IDBDatabase) => {
 
-      request.onsuccess = () => {
-        observer.next(request.result);
-        observer.complete();
-      };
+          return new Observable((observer) => {
+            const transaction = db.transaction(store, 'readonly');
+            const objectStore = transaction.objectStore(store);
+            const request = objectStore.get(id);
 
-      request.onerror = (event) => {
-        observer.error(event);
-      };
-    });
+            request.onsuccess = () => {
+              observer.next(request.result);
+              observer.complete();
+            };
+
+            request.onerror = (event) => {
+              observer.error(event);
+            };
+          });
+        }),
+      );
   }
 
   public clear(store: string): Observable<any> {
-    return new Observable((observer) => {
-      const transaction = this._db.transaction(store, 'readwrite');
-      const objectStore = transaction.objectStore(store);
-      const request = objectStore.clear();
+    return this.open()
+      .pipe(
+        switchMap((db: IDBDatabase) => {
+          return new Observable((observer) => {
+            const transaction = db.transaction(store, 'readwrite');
+            const objectStore = transaction.objectStore(store);
+            const request = objectStore.clear();
 
-      request.onsuccess = () => {
-        observer.next(request.result);
-        observer.complete();
-      };
+            request.onsuccess = () => {
+              observer.next(request.result);
+              observer.complete();
+            };
 
-      request.onerror = (event) => {
-        observer.error(event);
-      };
-    });
+            request.onerror = (event) => {
+              observer.error(event);
+            };
+          });
+        }),
+      );
   }
 
   public delete(store: string, keys: string | string[]): Observable<any> {
-    return new Observable((observer) => {
-      const transaction = this._db.transaction(store, 'readwrite');
-      const objectStore = transaction.objectStore(store);
-      keys = Array.isArray(keys) ? keys : [keys];
-      keys.forEach((key) => {
-        const request = objectStore.delete(key);
+    return this.open()
+      .pipe(
+        switchMap((db: IDBDatabase) => {
+          return new Observable((observer) => {
+            const transaction = db.transaction(store, 'readwrite');
+            const objectStore = transaction.objectStore(store);
+            keys = Array.isArray(keys) ? keys : [keys];
+            keys.forEach((key) => {
+              const request = objectStore.delete(key);
 
-        request.onsuccess = () => {
-          observer.next(request.result);
-          observer.complete();
-        };
+              request.onsuccess = () => {
+                observer.next(request.result);
+                observer.complete();
+              };
 
-        request.onerror = (event) => {
-          observer.error(event);
-        };
-      });
-    });
+              request.onerror = (event) => {
+                observer.error(event);
+              };
+            });
+          });
+        }),
+      );
   }
 
   public data(store: string, operators: Operator[]): Observable<any[]> {
-    const operatorData = new OperatorData(operators);
-    const iterable = new IndexDbIterable(this._db, store, operatorData);
+    return this.open()
+      .pipe(
+        switchMap((db: IDBDatabase) => {
+          const operatorData = new OperatorData(operators);
+          const iterable = new IndexDbIterable(db, store, operatorData);
 
-    return iterable.data$;
+          return iterable.data$;
+        }),
+      );
   }
 
   public put(store, data): Observable<any> {
-    return new Observable((observer: Subscriber<any>) => {
-      const transaction = this._db.transaction(store, 'readwrite');
-      const objectStore = transaction.objectStore(store);
-      const request = objectStore.put(data);
+    return this.open()
+      .pipe(
+        switchMap((db: IDBDatabase) => {
+          return new Observable((observer: Subscriber<any>) => {
+            const transaction = db.transaction(store, 'readwrite');
+            const objectStore = transaction.objectStore(store);
+            const request = objectStore.put(data);
 
-      request.onsuccess = () => {
-        observer.next(null);
-        observer.complete();
-      };
+            request.onsuccess = () => {
+              observer.next(null);
+              observer.complete();
+            };
 
-      request.onerror = (event) => {
-        observer.error(event);
-      };
-    });
-  }
-
-  public close(): Observable<void> {
-    this._db?.close();
-    this._db = null;
-
-    return of(null);
+            request.onerror = (event) => {
+              observer.error(event);
+            };
+          });
+        }),
+      );
   }
 
   public destroyDatabase(): Observable<void> {

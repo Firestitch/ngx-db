@@ -135,7 +135,7 @@ export class Remote<T> {
         not(eq('_sync', undefined)),
       )
       .pipe(
-        switchMap((data) => {
+        switchMap((data: any[]) => {
           if(!data?.length) {
             return of(null);
           }

@@ -1,7 +1,7 @@
 import { parse } from '@firestitch/date';
 
 import { Observable, Subscriber, combineLatest, of } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
