@@ -34,8 +34,6 @@ export class FsDb {
             ...[
               ...Array.from(this._stores.values())
                 .map((store: Store<any>) => store.init()),
-              ...Array.from(this._stores.values())
-                .map((store: Store<any>) => store.open()),
             ],
           )
             .pipe(
