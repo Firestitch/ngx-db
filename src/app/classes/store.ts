@@ -4,6 +4,7 @@ import {  catchError, map,  switchMap, takeUntil, tap } from 'rxjs/operators';
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
 import { Changes, Data, StorageConfig, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
+import { SyncState } from '../enums';
 
 import { Remote } from './remote';
 
@@ -90,9 +91,10 @@ export abstract class Store<T> {
   public put(data: Data<T> | Data<T>[]): Observable<void> {
     data = (Array.isArray(data) ? data : [data])
       .map((item) => {
-        const _sync = {
+        const _sync: Data<any> = {
           revision: Number(item._sync?.revision || 0) + 1,
           date: new Date(),
+          state: SyncState.Pending,
         };
 
         return {

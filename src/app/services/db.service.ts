@@ -61,7 +61,6 @@ export class FsDb {
     )
       .pipe(
         toArray(),
-        delay(100),
         switchMap(() => concat(
           ...stores
             .map((store: Store<any>) => store.syncSave()),

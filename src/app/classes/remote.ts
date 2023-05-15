@@ -1,8 +1,9 @@
-import { Observable, Subject, concat, merge, of, throwError } from 'rxjs';
+import { Observable, concat, merge, of, throwError } from 'rxjs';
 import { catchError, filter, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { Data, RemoteConfig } from '../interfaces';
-import { eq, not } from '../operators';
+import { filter as operatorFilter } from '../operators';
+import { SyncState } from '../enums';
 
 import { Store } from './store';
 
@@ -81,7 +82,9 @@ export class Remote<T> {
               switchMap((storageData: { [key: string]: any }) => {
                 const remoteData = data
                   .filter((item) => {
-                    return !storageData[item[this._store.keyName]]?._sync;
+                    const syncState = storageData[item[this._store.keyName]]?._sync?.state;
+
+                    return syncState !== SyncState.Pending;
                   })
                   .map((item) => this._store.storage.put(item));
 
@@ -102,6 +105,7 @@ export class Remote<T> {
           this._modifyDate = new Date();
         }),
         mapTo(null),
+        tap(() => this.endSync()),
         finalize(() => {
           this.endSync();
         }),
@@ -117,7 +121,9 @@ export class Remote<T> {
 
     return this._store
       .gets(
-        not(eq('_sync', undefined)),
+        operatorFilter((item: Data<any>) => {
+          return item._sync?.state === SyncState.Pending;
+        }),
       )
       .pipe(
         switchMap((data: any[]) => {
@@ -129,7 +135,7 @@ export class Remote<T> {
             ...data.map((item: Data<any>) => {
               return this._save(item)
                 .pipe(
-                  this._catchError('Sync Save Error'),
+                  this._catchError('Sync Save Error', item),
                   switchMap((response) => {
                     response = {
                       ...response,
@@ -139,7 +145,7 @@ export class Remote<T> {
 
                     return this._store.storage.put(response);
                   }),
-                  this._catchError('Sync Storage Put Error'),
+                  this._catchError('Sync Storage Put Error', item),
                 );
             }),
           )
@@ -148,6 +154,7 @@ export class Remote<T> {
             );
         }),
         mapTo(null),
+        tap(() => this.endSync()),
         finalize(() => {
           this.endSync();
         }),
@@ -155,6 +162,8 @@ export class Remote<T> {
   }
 
   private _save(item: Data<unknown>): Observable<any> {
+    item._sync.state = SyncState.Processing;
+
     if(item._sync.revision === 1) {
       if(!this._post) {
         return throwError('Remote post method not configured');
@@ -170,7 +179,11 @@ export class Remote<T> {
     return this._put(item);
   }
 
-  private _catchError(errorType) {
+  private _catchError(errorType, item?) {
+    if(item) {
+      item._sync.state = SyncState.Error;
+    }
+
     return catchError((error) => {
       console.error(errorType, error);
 
