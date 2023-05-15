@@ -9,7 +9,6 @@ import { Store } from './store';
 
 export class Remote<T> {
 
-  private _syncGets$ = new Subject<any[]>();
   private _syncing = false;
   private _modifyDate: Date;
   private _limit: number;

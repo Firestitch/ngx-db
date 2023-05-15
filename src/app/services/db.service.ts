@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable, Subject,  concat,  interval,  merge,  of, throwError } from 'rxjs';
-import { catchError, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
+import { catchError, delay, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
 
@@ -61,8 +61,10 @@ export class FsDb {
     )
       .pipe(
         toArray(),
-        switchMap(() => concat(...stores
-          .map((store: Store<any>) => store.syncSave()),
+        delay(100),
+        switchMap(() => concat(
+          ...stores
+            .map((store: Store<any>) => store.syncSave()),
         )),
         toArray(),
       );
