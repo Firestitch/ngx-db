@@ -39,13 +39,17 @@ export class Remote<T> {
     this._syncing = false;
   }
 
+  public get syncing(): boolean {
+    return this._syncing;
+  }
+
   public destroy(): void {
     this._modifyDate = null;
     this._syncing = false;
   }
 
   public syncGet(): Observable<void> {
-    if(!this._gets) {
+    if(!this._gets || this.syncing) {
       return of(null);
     }
 
@@ -106,7 +110,7 @@ export class Remote<T> {
   }
 
   public syncSave(): Observable<void> {
-    if(!this._post && !this._put) {
+    if((!this._post && !this._put) || this.syncing) {
       return of(null);
     }
 
