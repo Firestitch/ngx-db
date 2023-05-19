@@ -1,9 +1,4 @@
-import { Observable, Subscriber, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
-
-import { IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
-import { IndexDbDescribe } from '../interfaces';
 
 
 export class OperatorData {

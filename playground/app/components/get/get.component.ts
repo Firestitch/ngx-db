@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, sort } from '@firestitch/db';
+import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 import { guid } from '@firestitch/common';
 
@@ -128,6 +128,16 @@ export class GetComponent implements OnInit, OnDestroy {
     this._db.store(AccountStore)
       .gets(
         eq('firstName', 'Billy'),
+      )
+      .subscribe((values)=> {
+        this.setValues(values);
+      });
+  }
+
+  public getsTimBig(): void {
+    this._db.store(AccountStore)
+      .gets(
+        or(match('name', /Tim/), match('name', /Big/)),
       )
       .subscribe((values)=> {
         this.setValues(values);
