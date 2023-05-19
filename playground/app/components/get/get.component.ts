@@ -137,7 +137,10 @@ export class GetComponent implements OnInit, OnDestroy {
   public getsTimBig(): void {
     this._db.store(AccountStore)
       .gets(
-        or(match('name', /Tim/), match('name', /Big/)),
+        or(
+          match('name', /Tim/),
+          match('name', /Big/),
+        ),
       )
       .subscribe((values)=> {
         this.setValues(values);
