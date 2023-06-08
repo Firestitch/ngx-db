@@ -90,8 +90,16 @@ export class IndexDbIterable {
             }
 
             if(sortOperatorConfig.type === 'date') {
-              return parse(o1[sortOperatorConfig.name]).getTime() - parse(o2[sortOperatorConfig.name]).getTime();
+              const d1 = parse(o1[sortOperatorConfig.name]);
+              const d2 = parse(o2[sortOperatorConfig.name]);
+
+              if(!d1 || !d2) {
+                return 0;
+              }
+
+              return d1.getTime() - d2.getTime();
             }
+
             const v1 = String(o1[sortOperatorConfig.name] || '');
             const v2 = String(o2[sortOperatorConfig.name] || '');
 
