@@ -1,8 +1,8 @@
-import { Observable, Subject, interval, of } from 'rxjs';
-import {  catchError, map,  switchMap, takeUntil, tap } from 'rxjs/operators';
+import { Observable, Subject, merge, of } from 'rxjs';
+import { map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
-import { Changes, Data, StorageConfig, StoreConfig } from '../interfaces';
+import { Changes, Data, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
 import { SyncState } from '../enums';
 
@@ -89,25 +89,32 @@ export abstract class Store<T> {
   }
 
   public put(data: Data<T> | Data<T>[]): Observable<void> {
-    data = (Array.isArray(data) ? data : [data])
-      .map((item) => {
-        const _sync: Data<any> = {
-          revision: Number(item._sync?.revision || 0) + 1,
-          date: new Date(),
-          state: SyncState.Pending,
-        };
-
-        return {
-          ...item,
-          _sync,
-        };
-      });
-
-    return this._storage.put(data)
+    return merge(
+      ...(Array.isArray(data) ? data : [data])
+        .map((item) => {
+          return this.get(item[this.keyName])
+            .pipe(
+              map((storageData: Data<T>) => {
+                return {
+                  ...item,
+                  _sync: {
+                    revision: Number(storageData?._sync?.revision || 0),
+                    date: new Date(),
+                    state: SyncState.Pending,
+                  },
+                };
+              }),
+            );
+        }),
+    )
       .pipe(
+        switchMap((syncData) => {
+          return this._storage.put(syncData);
+        }),
         tap(() => {
           this.change('put', data );
         }),
+        mapTo(null),
       );
   }
 

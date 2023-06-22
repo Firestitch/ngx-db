@@ -6,8 +6,8 @@ import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort 
 import { FsMessage } from '@firestitch/message';
 import { guid } from '@firestitch/common';
 
-import { Subject, merge, of } from 'rxjs';
-import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { Subject, merge, of, throwError } from 'rxjs';
+import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore, FileStore } from 'playground/app/stores';
 import { AccountData, BuildingData } from 'playground/app/data';
@@ -218,6 +218,9 @@ export class GetComponent implements OnInit, OnDestroy {
     this._db.store(AccountStore)
       .get('10')
       .pipe(
+        switchMap((data) => {
+          return data === undefined ? throwError('Failed to find account') : of(data);
+        }),
         switchMap((data) => {
           data = {
             ...data,

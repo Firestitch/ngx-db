@@ -1,4 +1,4 @@
-import { Observable, concat, of } from 'rxjs';
+import { Observable, concat, of, throwError } from 'rxjs';
 import { map, mapTo, switchMap } from 'rxjs/operators';
 
 import { IndexDb } from '../classes';

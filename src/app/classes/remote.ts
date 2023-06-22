@@ -86,7 +86,9 @@ export class Remote<T> {
 
                     return syncState !== SyncState.Pending;
                   })
-                  .map((item) => this._store.storage.put(item));
+                  .map((item) => {
+                    return this._store.storage.put(this._dataSynced(item));
+                  } );
 
                 if(remoteData.length === 0) {
                   return of(null);
@@ -136,14 +138,8 @@ export class Remote<T> {
               return this._save(item)
                 .pipe(
                   this._catchError('Sync Save Error', item),
-                  switchMap((response) => {
-                    response = {
-                      ...response,
-                    };
-
-                    delete response._sync;
-
-                    return this._store.storage.put(response);
+                  switchMap((response: Data<T>) => {
+                    return this._store.storage.put(this._dataSynced(response));
                   }),
                   this._catchError('Sync Storage Put Error', item),
                 );
@@ -161,10 +157,21 @@ export class Remote<T> {
       );
   }
 
+  private _dataSynced(data: Data<T>): Data<T> {
+    return {
+      ...data,
+      _sync: {
+        state: SyncState.Synced,
+        revision: 1,
+        date: new Date(),
+      },
+    };
+  }
+
   private _save(item: Data<unknown>): Observable<any> {
     item._sync.state = SyncState.Processing;
 
-    if(item._sync.revision === 1) {
+    if(!item._sync.revision) {
       if(!this._post) {
         return throwError('Remote post method not configured');
       }
