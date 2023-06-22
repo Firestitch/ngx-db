@@ -1,7 +1,7 @@
 import { SyncState } from '../enums';
 
 export type Data<T> = T & {
-  _sync: {
+  _sync?: {
     date?: Date;
     revision?: number;
     message?: string;
