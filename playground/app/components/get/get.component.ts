@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort } from '@firestitch/db';
+import {
+  FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort,
+} from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 import { guid } from '@firestitch/common';
 
 import { Subject, merge, of, throwError } from 'rxjs';
-import { catchError, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore, FileStore } from 'playground/app/stores';
 import { AccountData, BuildingData } from 'playground/app/data';
@@ -170,7 +172,7 @@ export class GetComponent implements OnInit, OnDestroy {
   public getSortModifyDate(): void {
     this._db.store(AccountStore)
       .gets(
-        sort('name'),
+        //sort('name'),
         sort('modifyDate','date', 'desc'),
       )
       .subscribe((values)=> {

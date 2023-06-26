@@ -93,11 +93,10 @@ export class IndexDbIterable {
               const d1 = parse(o1[sortOperatorConfig.name]);
               const d2 = parse(o2[sortOperatorConfig.name]);
 
-              if(!d1 || !d2) {
-                return 0;
-              }
+              const t1 = d1 ? d1.getTime() : 0;
+              const t2 = d2 ? d2.getTime() : 0;
 
-              return d1.getTime() - d2.getTime();
+              return t1 > t2 ? 1 : -1;
             }
 
             const v1 = String(o1[sortOperatorConfig.name] || '');
