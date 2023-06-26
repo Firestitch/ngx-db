@@ -173,7 +173,7 @@ export class GetComponent implements OnInit, OnDestroy {
     this._db.store(AccountStore)
       .gets(
         //sort('name'),
-        sort('modifyDate','date', 'desc'),
+        sort('modifyDate','date', 'asc', { nulls: 'last' }),
       )
       .subscribe((values)=> {
         this.setValues(values);

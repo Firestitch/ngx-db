@@ -1,4 +1,5 @@
 import { parse } from '@firestitch/date';
+import { toString } from '@firestitch/common';
 
 import { Observable, Subscriber, combineLatest, of } from 'rxjs';
 import { map, mapTo, switchMap, tap } from 'rxjs/operators';
@@ -85,13 +86,21 @@ export class IndexDbIterable {
         const sortOperatorConfig = sortOperator();
         this._data = this._data
           .sort((o1, o2) => {
+            const v1 = o1[sortOperatorConfig.name] ?? null;
+            const v2 = o2[sortOperatorConfig.name] ?? null;
+
             if(sortOperatorConfig.type === 'numeric') {
-              return o1[sortOperatorConfig.name] - o2[sortOperatorConfig.name];
+              return v1 - v2;
             }
 
             if(sortOperatorConfig.type === 'date') {
-              const d1 = parse(o1[sortOperatorConfig.name]);
-              const d2 = parse(o2[sortOperatorConfig.name]);
+              let d1 = typeof v1 === 'string' ? parse(v1) : v1;
+              let d2 = typeof v2 === 'string' ? parse(v2) : v2;
+
+              if(sortOperatorConfig.options.nulls === 'last') {
+                d1 = d1 === null ? new Date(9999,1,1) : d1;
+                d2 = d2 === null ? new Date(9999,1,1) : d2;
+              }
 
               const t1 = d1 ? d1.getTime() : 0;
               const t2 = d2 ? d2.getTime() : 0;
@@ -99,10 +108,7 @@ export class IndexDbIterable {
               return t1 > t2 ? 1 : -1;
             }
 
-            const v1 = String(o1[sortOperatorConfig.name] || '');
-            const v2 = String(o2[sortOperatorConfig.name] || '');
-
-            return v1.localeCompare(v2);
+            return toString(v1).localeCompare(toString(v2));
           });
 
         if(sortOperatorConfig.direction === 'desc') {
