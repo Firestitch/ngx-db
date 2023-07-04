@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Observable, Subject,  concat,  interval,  merge,  of, throwError } from 'rxjs';
+import { Observable, Subject,  concat,  interval,  merge,  of, throwError, timer } from 'rxjs';
 import { catchError, delay, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
@@ -70,18 +70,26 @@ export class FsDb {
   }
 
   public startSync(seconds): Observable<void> {
-    this._sync$ = new Subject();
+    return new Observable((observer) => {
+      this._sync$ = new Subject();
 
-    return interval(seconds * 1000)
-      .pipe(
-        switchMap(() => this.sync()),
-        catchError((error) => {
-          console.error('Sync Error', error);
+      timer(0, seconds * 1000)
+        .pipe(
+          switchMap(() => this.sync()),
+          tap(() => {
+            observer.next();
+            observer.complete();
+          }),
+          catchError((error) => {
+            console.error('Sync Error', error);
+            observer.error();
 
-          return of(null);
-        }),
-        takeUntil(this._sync$),
-      );
+            return of(null);
+          }),
+          takeUntil(this._sync$),
+        )
+        .subscribe();
+    });
   }
 
   public stopSync(): void {

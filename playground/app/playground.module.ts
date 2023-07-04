@@ -12,6 +12,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { AppMaterialModule } from './material.module';
 import { GetComponent } from './components';
+import { ConsoleComponent } from './components/console';
 
 
 @NgModule({
@@ -25,18 +26,13 @@ import { GetComponent } from './components';
     FsExampleModule.forRoot(),
     FsMessageModule.forRoot(),
     FsMessageModule,
+    FsDbModule,
   ],
   declarations: [
     AppComponent,
     GetComponent,
+    ConsoleComponent,
   ],
-  // providers: [
-  //   {
-  //     provide: FS_TRANSFER_HANDLER,
-  //     useClass: TransferHandler,
-  //     deps: [ FsMessage ]
-  //   }
-  // ],
 })
 export class PlaygroundModule {
 }

@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
+import { MatDialog } from '@angular/material/dialog';
+
 import {
   FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort,
 } from '@firestitch/db';
@@ -13,6 +15,8 @@ import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { BuildingStore, AccountStore, FileStore } from 'playground/app/stores';
 import { AccountData, BuildingData } from 'playground/app/data';
+
+import { ConsoleComponent } from '../console';
 
 
 @Component({
@@ -31,6 +35,7 @@ export class GetComponent implements OnInit, OnDestroy {
   constructor(
     private _db: FsDb,
     private _message: FsMessage,
+    private _dialog: MatDialog,
     private _cdRef: ChangeDetectorRef,
   ) {
     const accountRemote: RemoteConfig = {
@@ -314,6 +319,10 @@ export class GetComponent implements OnInit, OnDestroy {
         this.setValues(values);
         this._message.success();
       });
+  }
+
+  public openConsole(): void {
+    this._dialog.open(ConsoleComponent);
   }
 
   public gets(): void {
