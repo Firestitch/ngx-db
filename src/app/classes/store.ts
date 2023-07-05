@@ -88,7 +88,7 @@ export abstract class Store<T> {
       );
   }
 
-  public put(data: Data<T> | Data<T>[], options: { sync?: Sync } = {}): Observable<void> {
+  public put(data: Data<T> | Data<T>[]): Observable<void> {
     return merge(
       ...(Array.isArray(data) ? data : [data])
         .map((item) => {
@@ -96,9 +96,9 @@ export abstract class Store<T> {
             .pipe(
               map((storageData: Data<T>) => {
                 const _sync = {
-                  revision: Number(options.sync?.revision || storageData?._sync?.revision || 0),
-                  date: options.sync?.date || new Date(),
-                  state: options.sync?.state || SyncState.Pending,
+                  revision: Number(storageData?._sync?.revision || 0),
+                  date: new Date(),
+                  state: SyncState.Pending,
                 };
 
                 return {
@@ -111,7 +111,11 @@ export abstract class Store<T> {
     )
       .pipe(
         switchMap((syncData) => {
-          return this._storage.put(syncData);
+          if(!this._remote || !navigator.onLine) {
+            return this._storage.put(syncData);
+          }
+
+          return this._remote.save(syncData);
         }),
         tap(() => {
           this.change('put', data );

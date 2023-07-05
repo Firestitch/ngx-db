@@ -55,46 +55,44 @@ export class Remote<T> {
 
     this.startSync();
 
-    return this._getAll()
+    return this._getAllPages()
       .pipe(
-        this._catchError('Sync Gets Error'),
-        switchMap((data: any[]) => {
-          if(!data?.length) {
+        catchError(() => {
+          return of(null)
+            .pipe(
+              filter(() => false),
+            );
+        }),
+        switchMap((remoteData: any[]) => {
+          if(!remoteData?.length) {
             return of(null);
           }
 
           return merge(
-            ...data
+            ...remoteData
               .map((item) => this._store.storage.get(item[this._store.keyName])),
           )
             .pipe(
               toArray(),
-              map((stoageData) => {
-                stoageData = stoageData.reduce((accum, item) => {
+              map((storageData) => {
+                storageData = storageData.reduce((accum, item) => {
                   return item ? {
                     ...accum,
                     [item[this._store.keyName]]: item,
                   } : accum;
                 }, {});
 
-                return stoageData;
+                return storageData;
               }),
               switchMap((storageData: { [key: string]: any }) => {
-                const remoteData = data
+                remoteData = remoteData
                   .filter((item) => {
                     const syncState = storageData[item[this._store.keyName]]?._sync?.state;
 
-                    return syncState !== SyncState.Pending;
+                    return !syncState || SyncState.Synced;
                   })
                   .map((item) => {
-                    return this._store
-                      .put(item, {
-                        sync: {
-                          state: SyncState.Synced,
-                          revision: 1,
-                          date: new Date(),
-                        },
-                      });
+                    return this._store.storage.putSynced(item);
                   } );
 
                 if(remoteData.length === 0) {
@@ -142,19 +140,16 @@ export class Remote<T> {
 
           return concat(
             ...data.map((item: Data<any>) => {
-              return this._save(item)
+              return this.save(item)
                 .pipe(
-                  this._catchError('Sync Save Error', item),
-                  switchMap((response: Data<T>) => {
-                    return this._store.put(response, {
-                      sync: {
-                        state: SyncState.Synced,
-                        revision: 1,
-                        date: new Date(),
-                      },
-                    });
+                  catchError((error) => {
+                    console.error('Sync save error', error);
+
+                    return of(null)
+                      .pipe(
+                        filter(() => false),
+                      );
                   }),
-                  this._catchError('Sync Storage Put Error', item),
                 );
             }),
           )
@@ -170,40 +165,44 @@ export class Remote<T> {
       );
   }
 
-  private _save(item: Data<unknown>): Observable<any> {
-    item._sync.state = SyncState.Processing;
+  public save(item: Data<T>): Observable<any> {
+    return of(null)
+      .pipe(
+        switchMap(() => {
+          item._sync = {
+            ...item._sync,
+            state: SyncState.Processing,
+          };
 
-    if(!item._sync.revision) {
-      if(!this._post) {
-        return throwError('Remote post method not configured');
-      }
+          if(!item._sync.revision) {
+            if(!this._post) {
+              return throwError('Remote post method not configured');
+            }
 
-      return this._post(item);
-    }
+            return this._post(item);
+          }
 
-    if(!this._put) {
-      return throwError('Remote put method not configured');
-    }
+          if(!this._put) {
+            return throwError('Remote put method not configured');
+          }
 
-    return this._put(item);
+          return this._put(item);
+        }),
+        switchMap((response: Data<T>) => {
+          return this._store.storage.putSynced(response);
+        }),
+        catchError(() => {
+          item._sync = {
+            ...item._sync,
+            state: SyncState.Error,
+          };
+
+          return of(null);
+        }),
+      );
   }
 
-  private _catchError(errorType, item?) {
-    if(item) {
-      item._sync.state = SyncState.Error;
-    }
-
-    return catchError((error) => {
-      console.error(errorType, error);
-
-      return of(null)
-        .pipe(
-          filter(() => false),
-        );
-    });
-  }
-
-  private _getAll(): Observable<any[]> {
+  private _getAllPages(): Observable<any[]> {
     return this._getPage([], 0);
   }
 

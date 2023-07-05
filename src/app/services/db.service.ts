@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-import { Observable, Subject,  concat,  interval,  merge,  of, throwError, timer } from 'rxjs';
-import { catchError, delay, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
+import { Observable, Subject,  concat,  merge,  of, throwError, timer } from 'rxjs';
+import { catchError, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
 

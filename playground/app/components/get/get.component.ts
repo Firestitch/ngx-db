@@ -243,9 +243,9 @@ export class GetComponent implements OnInit, OnDestroy {
     this._db.store(AccountStore)
       .put({
         id: String(Math.floor(Math.random() * 100000)),
-        firstName: 'Luke',
-        lastName: 'Skywalker',
-        buildingId: 1,
+        country: 'Italy',
+        date: new Date(),
+        areaId: 55,
       })
       .subscribe(()=> {
         this._message.success('Saved');
