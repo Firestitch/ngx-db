@@ -5,7 +5,7 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 
 import {
-  FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort, sortDate, sortNumber,
+  FsDb, RemoteConfig, eq, limit, mapMany, mapOne, match, or, sort, sortDate, sortNumber,
 } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 import { guid } from '@firestitch/common';
@@ -268,16 +268,6 @@ export class GetComponent implements OnInit, OnDestroy {
       .clear()
       .subscribe(()=> {
         this._message.success('Deleted All');
-      });
-  }
-
-  public deleteFirst(): void {
-    this._db.store(AccountStore)
-      .delete(
-        first(),
-      )
-      .subscribe(()=> {
-        this._message.success('Deleted last');
       });
   }
 

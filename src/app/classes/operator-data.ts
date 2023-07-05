@@ -24,10 +24,10 @@ export class OperatorData {
       });
   }
 
-  public match(value, index): boolean {
+  public match(value): boolean {
     return this._filters.length === 0 ||
       this._filters.every((operator: Operator) => {
-        return operator(value, index);
+        return operator(value);
       });
   }
 

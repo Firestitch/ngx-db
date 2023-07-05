@@ -87,7 +87,14 @@ export class Remote<T> {
                     return syncState !== SyncState.Pending;
                   })
                   .map((item) => {
-                    return this._store.storage.put(this._dataSynced(item));
+                    return this._store
+                      .put(item, {
+                        sync: {
+                          state: SyncState.Synced,
+                          revision: 1,
+                          date: new Date(),
+                        },
+                      });
                   } );
 
                 if(remoteData.length === 0) {
@@ -139,7 +146,13 @@ export class Remote<T> {
                 .pipe(
                   this._catchError('Sync Save Error', item),
                   switchMap((response: Data<T>) => {
-                    return this._store.storage.put(this._dataSynced(response));
+                    return this._store.put(response, {
+                      sync: {
+                        state: SyncState.Synced,
+                        revision: 1,
+                        date: new Date(),
+                      },
+                    });
                   }),
                   this._catchError('Sync Storage Put Error', item),
                 );
@@ -155,17 +168,6 @@ export class Remote<T> {
           this.endSync();
         }),
       );
-  }
-
-  private _dataSynced(data: Data<T>): Data<T> {
-    return {
-      ...data,
-      _sync: {
-        state: SyncState.Synced,
-        revision: 1,
-        date: new Date(),
-      },
-    };
   }
 
   private _save(item: Data<unknown>): Observable<any> {

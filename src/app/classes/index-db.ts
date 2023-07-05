@@ -1,11 +1,11 @@
 import { Observable, Subscriber, concat, of } from 'rxjs';
 import { finalize, map, switchMap, tap, toArray } from 'rxjs/operators';
 
-import { IndexDbIterable } from '../iterable';
 import { Operator } from '../types';
 import { IndexDbDescribe } from '../interfaces';
 
 import { OperatorData } from './operator-data';
+import { IndexDbData } from './index-db-data';
 
 
 export class IndexDb {
@@ -162,7 +162,7 @@ export class IndexDb {
       .pipe(
         switchMap((db: IDBDatabase) => {
           const operatorData = new OperatorData(operators);
-          const iterable = new IndexDbIterable(db, store, operatorData);
+          const iterable = new IndexDbData(db, store, operatorData);
 
           return iterable.data$
             .pipe(

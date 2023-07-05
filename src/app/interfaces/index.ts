@@ -6,3 +6,4 @@ export * from './data';
 export * from './remote-config';
 export * from './store-index';
 export * from './storage-config';
+export * from './sync';

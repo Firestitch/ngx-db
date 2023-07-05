@@ -13,8 +13,8 @@ export class MemoryStorage extends Storage {
   public gets(operators: any[]): Observable<any> {
     const operatorData = new OperatorData(operators);
     const data = Object.values(this._data)
-      .filter((item: any, index: number) => {
-        return operatorData.match(item, index);
+      .filter((item: any) => {
+        return operatorData.match(item);
       });
 
     return of(data);

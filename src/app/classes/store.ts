@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 import { map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
-import { Changes, Data, StoreConfig } from '../interfaces';
+import { Changes, Data, StoreConfig, Sync } from '../interfaces';
 import { Operator } from '../types';
 import { SyncState } from '../enums';
 
@@ -88,20 +88,22 @@ export abstract class Store<T> {
       );
   }
 
-  public put(data: Data<T> | Data<T>[]): Observable<void> {
+  public put(data: Data<T> | Data<T>[], options: { sync?: Sync } = {}): Observable<void> {
     return merge(
       ...(Array.isArray(data) ? data : [data])
         .map((item) => {
           return this.get(item[this.keyName])
             .pipe(
               map((storageData: Data<T>) => {
+                const _sync = {
+                  revision: Number(options.sync?.revision || storageData?._sync?.revision || 0),
+                  date: options.sync?.date || new Date(),
+                  state: options.sync?.state || SyncState.Pending,
+                };
+
                 return {
                   ...item,
-                  _sync: {
-                    revision: Number(storageData?._sync?.revision || 0),
-                    date: new Date(),
-                    state: SyncState.Pending,
-                  },
+                  _sync,
                 };
               }),
             );

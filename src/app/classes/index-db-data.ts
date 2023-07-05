@@ -2,36 +2,49 @@ import { parse } from '@firestitch/date';
 import { toString } from '@firestitch/common';
 
 import { Observable, Subscriber, combineLatest, of } from 'rxjs';
-import { map, mapTo, switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
-import { OperatorData } from '../classes';
 
-export class IndexDbIterable {
+import { OperatorData } from '.';
+
+export class IndexDbData {
 
   private _data = [];
+  private _transaction: IDBTransaction;
+  private _objectStore: IDBObjectStore;
 
   constructor(
     private _db: IDBDatabase,
     private _store: string,
     private _operatorData: OperatorData,
   ) {
+    this._transaction = this._db.transaction(this._store, 'readonly');
+    this._objectStore = this._transaction.objectStore(this._store);
+  }
+
+  public get sortOperators(): Operator[] {
+    return this._operatorData.sortOperators
+      .filter((operator: any) => {
+        return !this._objectStore.indexNames.contains(operator().name);
+      });
+  }
+
+  public get keySortOperator(): Operator {
+    return this._operatorData.sortOperators
+      .find((operator: any) => {
+        return this._objectStore.indexNames.contains(operator().name);
+      });
   }
 
   public get data$(): Observable<any> {
-    const transaction = this._db.transaction(this._store, 'readonly');
-    const objectStore = transaction.objectStore(this._store);
+    const keySortOperator = this.keySortOperator;
 
-    const keySortOperator = this._operatorData.sortOperators
-      .find((operator: any) => {
-        return objectStore.indexNames.contains(operator().name);
-      });
-
-    let cursor: IDBObjectStore | IDBIndex = objectStore;
+    let cursor: IDBObjectStore | IDBIndex = this._objectStore;
     if(keySortOperator) {
       const keySortConfig = keySortOperator();
-      cursor = objectStore.index(keySortConfig.name);
+      cursor = this._objectStore.index(keySortConfig.name);
     }
 
     return new Observable((observer: Subscriber<any>) => {
@@ -44,21 +57,11 @@ export class IndexDbIterable {
         }
 
         const value = event.target.result.value;
-        const match = this._operatorData.match(value, index);
+        const match = this._operatorData.match(value);
 
         if(match) {
-          if(!this._operatorData.limit || index >= this._operatorData.limit.offset) {
-            this._data.push(value);
-          }
-
+          this._data.push(value);
           index++;
-        }
-
-        if(
-          this._operatorData.limit &&
-          this._operatorData.limit.count === index - this._operatorData.limit.offset
-        ) {
-          return this._complete(observer);
         }
 
         event.target.result.continue();
@@ -69,17 +72,24 @@ export class IndexDbIterable {
       };
     })
       .pipe(
-        tap(() => this._sort(keySortOperator)),
+        tap(() => this._sort()),
+        tap(() => this._limit()),
         switchMap(() => this._map()),
         map(() => this._data),
       );
   }
 
-  private _sort(keySortOperator) {
-    const sortOperators = this._operatorData.sortOperators
-      .filter((operator: any) => {
-        return keySortOperator !== operator;
-      });
+  private _limit(): void {
+    if(!this._operatorData.limit) {
+      return;
+    }
+
+    const offset = this._operatorData.limit.offset;
+    this._data = this._data.slice(offset, offset + this._operatorData.limit.count);
+  }
+
+  private _sort(): void {
+    const sortOperators = this.sortOperators;
 
     if(sortOperators.length) {
       sortOperators.forEach((sortOperator) => {
