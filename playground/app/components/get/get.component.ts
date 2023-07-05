@@ -5,7 +5,7 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 
 import {
-  FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort,
+  FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, or, sort, sortDate, sortNumber,
 } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
 import { guid } from '@firestitch/common';
@@ -83,8 +83,8 @@ export class GetComponent implements OnInit, OnDestroy {
       .register(new AccountStore({
         remote: accountRemote,
         indexes: [
-          { name: 'name', keyName: 'name' },
-          //{ name: 'billingAddressId', type: 'date', },
+          { name: 'country', keyName: 'country' },
+          { name: 'date', keyName: 'date' },
         ],
       }))
       .register(new BuildingStore({ remote: buildingRemote }))
@@ -102,11 +102,6 @@ export class GetComponent implements OnInit, OnDestroy {
         },
       }))
       .init()
-      // .pipe(
-      //   switchMap(() => {
-      //     return this._db.startSync(5);
-      //   }),
-      // )
       .subscribe(() => {
         this._message.info('Ready!');
       });
@@ -131,22 +126,22 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
-  public getsBilly(): void {
+  public getsIndonesia(): void {
     this._db.store(AccountStore)
       .gets(
-        eq('firstName', 'Billy'),
+        eq('country', 'Indonesia'),
       )
       .subscribe((values)=> {
         this.setValues(values);
       });
   }
 
-  public getsTimBig(): void {
+  public getsMatchOr(): void {
     this._db.store(AccountStore)
       .gets(
         or(
-          match('name', /Tim/),
-          match('name', /Big/),
+          match('country', /Canada/),
+          eq('areaId', 3),
         ),
       )
       .subscribe((values)=> {
@@ -157,28 +152,27 @@ export class GetComponent implements OnInit, OnDestroy {
   public getSortName(): void {
     this._db.store(AccountStore)
       .gets(
-        sort('name'),
+        sort('country'),
       )
       .subscribe((values)=> {
         this.setValues(values);
       });
   }
 
-  public getSortBillingAddressId(): void {
+  public getSortAreaId(): void {
     this._db.store(AccountStore)
       .gets(
-        sort('billingAddressId', 'numeric'),
+        sortNumber('areaId'),
       )
       .subscribe((values)=> {
         this.setValues(values);
       });
   }
 
-  public getSortModifyDate(): void {
+  public getSortDate(): void {
     this._db.store(AccountStore)
       .gets(
-        //sort('name'),
-        sort('modifyDate','date', 'asc', { nulls: 'last' }),
+        sortDate('date', 'asc', { nulls: 'last' }),
       )
       .subscribe((values)=> {
         this.setValues(values);
@@ -188,17 +182,17 @@ export class GetComponent implements OnInit, OnDestroy {
   public count(): void {
     this._db.store(AccountStore)
       .count(
-        eq('firstName', 'Billy'),
+        eq('areaId', 2),
       )
       .subscribe((values)=> {
         this.setValues(values);
       });
   }
 
-  public getsMatch(): void {
+  public getsMatchCase(): void {
     this._db.store(AccountStore)
       .gets(
-        match('firstName', 'b', 'i'),
+        match('country', 'sweden', 'i'),
       )
       .subscribe((values)=> {
         this.setValues(values);
@@ -221,25 +215,26 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
-  public putSusan(): void {
+  public putIndia(): void {
     this._db.store(AccountStore)
-      .get('10')
+      .get('1')
       .pipe(
         switchMap((data) => {
-          return data === undefined ? throwError('Failed to find account') : of(data);
+          return data === undefined ? throwError('Failed to find') : of(data);
         }),
         switchMap((data) => {
           data = {
             ...data,
-            firstName: 'Susan Changed',
-            lastName: 'Wilson Changed',
+            name: 'India Updated',
+            areaId: 20,
+            date: new Date(),
           };
 
           return this._db.store(AccountStore)
             .put(data);
         }),
       )
-      .subscribe((response)=> {
+      .subscribe(()=> {
         this._message.success('Saved');
       });
   }
@@ -336,10 +331,11 @@ export class GetComponent implements OnInit, OnDestroy {
       });
   }
 
-  public getsLimit(): void {
+  public getsLimit(count, offset): void {
     this._db.store(AccountStore)
       .gets(
-        limit(2, 2),
+        sortDate('date'),
+        limit(count, offset),
       )
       .subscribe((values)=> {
         this.setValues(values);

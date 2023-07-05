@@ -89,11 +89,11 @@ export class IndexDbIterable {
             const v1 = o1[sortOperatorConfig.name] ?? null;
             const v2 = o2[sortOperatorConfig.name] ?? null;
 
-            if(sortOperatorConfig.type === 'numeric') {
+            if(sortOperatorConfig.options.type === 'number') {
               return v1 - v2;
             }
 
-            if(sortOperatorConfig.type === 'date') {
+            if(sortOperatorConfig.options.type === 'date') {
               let d1 = typeof v1 === 'string' ? parse(v1) : v1;
               let d2 = typeof v2 === 'string' ? parse(v2) : v2;
 

@@ -35,7 +35,7 @@ export class LocalStorage extends Storage {
   public get(key: string): Observable<any> {
     return this.data
       .pipe(
-        map((data) => data[key] || null),
+        map((data) => data[key]),
       );
   }
 

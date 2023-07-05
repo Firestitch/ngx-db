@@ -1,15 +1,15 @@
 export function sort(
   name: string,
-  type: 'alphanumeric' | 'numeric' | 'date' = 'alphanumeric',
   direction: 'desc' | 'asc' = 'asc',
-  options?: { nulls?: 'first' | 'last' },
+  options?: { nulls?: 'first' | 'last'; type?: 'string' | 'number' | 'date' },
 ) {
   return Object.defineProperty(() => {
     options = {
       ...options,
       nulls: options?.nulls ?? 'first',
+      type: options?.type || 'string',
     };
 
-    return { name, type, direction, options };
+    return { name, direction, options };
   }, 'type', { value: 'sort' });
 }

@@ -11,15 +11,8 @@
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getsLimit()">
-      Limit 2 Offset 2
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsTimBig()">
-      Like Tim or Like Big
+        (click)="getsMatchOr()">
+      Match Canada or Equal AreaId 3
     </a>
 
     <a 
@@ -39,15 +32,15 @@
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getsBilly()">
-      Equals First Name Billy
+        (click)="getsIndonesia()">
+      Equals Indonesia
     </a>
 
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getsMatch()">
-      Match 'b'
+        (click)="getsMatchCase()">
+      Match sweden
     </a>
 
     <a 
@@ -60,15 +53,30 @@
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getSortBillingAddressId()">
-      Sort Billing Address ID
+        (click)="getSortAreaId()">
+      Sort Area Id
     </a>
 
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getSortModifyDate()">
-      Sort Modify Date
+        (click)="getSortDate()">
+      Sort Date
+    </a>
+
+    <h2>Limit</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getsLimit(2, 2)">
+      Limit 2 Offset 2
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="getsLimit(2, 4)">
+      Limit 2 Offset 4
     </a>
 
 
@@ -77,29 +85,22 @@
         mat-raised-button 
         color="primary" 
         (click)="count()">
-      Count First Name Billy
+      Count Area ID  2
     </a>
 
     <h2>Put</h2>
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
-      Account John Doe
+        (click)="put({ id: id, country: 'India', date: null, areaId: 7 })">
+      India
     </a>
 
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="put({ id: id, firstName: 'Billy', lastName: 'Bob' })">
-      Account Billy Bob
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="putSusan()">
-      Account Susan
+        (click)="putIndia()">
+      Update India
     </a>
 
     <h2>Post</h2>

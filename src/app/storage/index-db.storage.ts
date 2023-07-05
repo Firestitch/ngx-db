@@ -41,10 +41,7 @@ export class IndexDbStorage extends Storage {
   }
 
   public get(key: string | number): Observable<any> {
-    return this._indexDB.get(this._store.name, key)
-      .pipe(
-        map((data) => data || null),
-      );
+    return this._indexDB.get(this._store.name, key);
   }
 
   public open(): Observable<void> {
