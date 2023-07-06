@@ -68,6 +68,7 @@ export class Remote<T> {
             return of(null);
           }
 
+          // From the remote data get the storage data
           return merge(
             ...remoteData
               .map((item) => this._store.storage.get(item[this._store.keyName])),
@@ -75,18 +76,21 @@ export class Remote<T> {
             .pipe(
               toArray(),
               map((storageData) => {
-                storageData = storageData.reduce((accum, item) => {
-                  return item ? {
-                    ...accum,
-                    [item[this._store.keyName]]: item,
-                  } : accum;
-                }, {});
+                // Index the storage data by the storage key
+                storageData = storageData
+                  .reduce((accum, item) => {
+                    return item ? {
+                      ...accum,
+                      [item[this._store.keyName]]: item,
+                    } : accum;
+                  }, {});
 
                 return storageData;
               }),
               switchMap((storageData: { [key: string]: any }) => {
                 remoteData = remoteData
                   .filter((item) => {
+                    // Filter only items that have no sync state or sync state Synced
                     const syncState = storageData[item[this._store.keyName]]?._sync?.state;
 
                     return !syncState || SyncState.Synced;
