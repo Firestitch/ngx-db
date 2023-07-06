@@ -55,8 +55,12 @@ export class IndexDbStorage extends Storage {
   public destroy(): Observable<void> {
     return this._indexDB.describe
       .pipe(
-        switchMap((indexDbDescribe: IndexDbDescribe) => {
-          const version = indexDbDescribe.version + 1;
+        switchMap((describe: IndexDbDescribe) => {
+          if(Array.from(describe.objectStoreNames).indexOf(this._store.name) === -1) {
+            return of(null);
+          }
+
+          const version = describe.version + 1;
           const upgrade = (event: any) => {
             const db = event.target.result;
             db.deleteObjectStore(this._store.name);
