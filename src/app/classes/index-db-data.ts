@@ -2,7 +2,7 @@ import { parse } from '@firestitch/date';
 import { toString } from '@firestitch/common';
 
 import { Observable, Subscriber, combineLatest, of } from 'rxjs';
-import { finalize, map, switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
@@ -76,15 +76,7 @@ export class IndexDbData {
         tap(() => this._limit()),
         switchMap(() => this._map()),
         map(() => this._data),
-        finalize(() => {
-          this.destroy();
-        }),
       );
-  }
-
-  public destroy(): void {
-    this._transaction = null;
-    this._objectStore = null;
   }
 
   private _limit(): void {

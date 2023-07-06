@@ -167,7 +167,6 @@ export class IndexDb {
           return iterable.data$
             .pipe(
               finalize(() => {
-                iterable.destroy();
                 db.close();
               }),
             );

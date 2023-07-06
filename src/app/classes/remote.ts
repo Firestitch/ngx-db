@@ -169,6 +169,10 @@ export class Remote<T> {
       );
   }
 
+  public get saveable(): boolean {
+    return !!this._post || !!this._put;
+  }
+
   public save(item: Data<T>): Observable<any> {
     return of(null)
       .pipe(

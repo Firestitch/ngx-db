@@ -111,11 +111,11 @@ export abstract class Store<T> {
     )
       .pipe(
         switchMap((syncData) => {
-          if(!this._remote || !navigator.onLine) {
-            return this._storage.put(syncData);
+          if(this._remote?.saveable && navigator.onLine) {
+            return this._remote.save(syncData);
           }
 
-          return this._remote.save(syncData);
+          return this._storage.put(syncData);
         }),
         tap(() => {
           this.change('put', data );
