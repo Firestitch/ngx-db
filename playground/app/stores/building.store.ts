@@ -2,9 +2,8 @@ import { Store } from '@firestitch/db';
 
 export class BuildingStore extends Store<Building> {
 
-  protected _name = 'building';
-  protected _keyName = 'id';
-  protected _revisionName = 'revision';
+  public static storeName = 'account';
+  public static keyName = 'id';
 
 }
 

@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 import { filter, map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
-import { Changes, Data, StoreConfig, Sync } from '../interfaces';
+import { Changes, Data, StoreConfig } from '../interfaces';
 import { Operator } from '../types';
 import { SyncState } from '../enums';
 
@@ -11,13 +11,13 @@ import { Remote } from './remote';
 
 export abstract class Store<T> {
 
+  public static storeName: string;
+  public static keyName: string;
+  public static revisionName: string;
+
   private _storage: Storage;
   private _remote: Remote<T>;
   private _changes$ = new Subject<Changes<T>>();
-
-  protected abstract _name: string;
-  protected abstract _keyName: string;
-  protected abstract _revisionName: string;
 
   constructor(
     private _config: StoreConfig,
@@ -56,7 +56,7 @@ export abstract class Store<T> {
   }
 
   public get name(): string {
-    return this._name;
+    return (this.constructor as typeof Store).storeName;
   }
 
   public get storage(): Storage {
@@ -68,7 +68,7 @@ export abstract class Store<T> {
   }
 
   public get keyName(): string {
-    return this._keyName;
+    return (this.constructor as typeof Store).keyName;
   }
 
   public count(...operators: Operator[]): Observable<number> {

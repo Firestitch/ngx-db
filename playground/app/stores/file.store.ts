@@ -2,9 +2,8 @@ import { Store } from '@firestitch/db';
 
 export class FileStore extends Store<FileItem> {
 
-  protected _name = 'file';
-  protected _keyName = 'guid';
-  protected _revisionName = 'revision';
+  public static storeName = 'file';
+  public static keyName = 'id';
 
 }
 

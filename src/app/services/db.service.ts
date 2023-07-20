@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Observable, Subject,  concat,  merge,  of, throwError, timer } from 'rxjs';
+import { Observable, Subject, concat, merge, of, throwError, timer } from 'rxjs';
 import { catchError, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
@@ -11,19 +11,27 @@ import { Store } from '../classes';
 })
 export class FsDb {
 
-  private _stores = new Map<string,Store<any>>();
+  private _stores = new Map<string, Store<any>>();
   private _ready$ = new Subject();
   private _sync$ = new Subject();
   private _ready = false;
 
   public register(store: Store<any>): FsDb {
-    this._stores.set(store.constructor.name, store);
+    if (!store.name) {
+      throw new Error('Store missing storeName');
+    }
+
+    if (!store.keyName) {
+      throw new Error('Store missing storeKey');
+    }
+
+    this._stores.set(store.name, store);
 
     return this;
   }
 
   public store(store): Store<any> {
-    return this._stores.get(store.name);
+    return this._stores.get(store.storeName);
   }
 
   public init(): Observable<any> {
@@ -117,7 +125,7 @@ export class FsDb {
   }
 
   public get ready$() {
-    if(!this._ready) {
+    if (!this._ready) {
       return this._ready$.asObservable();
     }
 
