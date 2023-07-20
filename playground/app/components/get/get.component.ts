@@ -51,6 +51,9 @@ export class GetComponent implements OnInit, OnDestroy {
           ),
       put: (data) => of(data)
         .pipe(
+          switchMap((data) => {
+            return throwError('Failed to put');
+          }),
           tap((_data) => {
             console.log('Remote Put', _data);
           }),
@@ -131,7 +134,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         eq('country', 'Indonesia'),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -144,7 +147,7 @@ export class GetComponent implements OnInit, OnDestroy {
           eq('areaId', 3),
         ),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -154,7 +157,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         sort('country'),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -164,7 +167,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         sortNumber('areaId'),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -174,7 +177,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         sortDate('date', 'asc', { nulls: 'last' }),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -184,7 +187,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .count(
         eq('areaId', 2),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -194,7 +197,7 @@ export class GetComponent implements OnInit, OnDestroy {
       .gets(
         match('country', 'sweden', 'i'),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -202,7 +205,7 @@ export class GetComponent implements OnInit, OnDestroy {
   public getId(): void {
     this._db.store(AccountStore)
       .get(this.id)
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -210,7 +213,7 @@ export class GetComponent implements OnInit, OnDestroy {
   public put(data): void {
     this._db.store(AccountStore)
       .put(data)
-      .subscribe((response)=> {
+      .subscribe((response) => {
         this._message.success('Saved');
       });
   }
@@ -234,7 +237,7 @@ export class GetComponent implements OnInit, OnDestroy {
             .put(data);
         }),
       )
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Saved');
       });
   }
@@ -247,7 +250,7 @@ export class GetComponent implements OnInit, OnDestroy {
         date: new Date(),
         areaId: 55,
       })
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Saved');
       });
   }
@@ -258,7 +261,7 @@ export class GetComponent implements OnInit, OnDestroy {
         guid: guid(),
         file: new File([], 'filename.jpg'),
       })
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Saved');
       });
   }
@@ -266,21 +269,21 @@ export class GetComponent implements OnInit, OnDestroy {
   public deleteAll(): void {
     this._db.store(AccountStore)
       .clear()
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Deleted All');
       });
   }
 
   public clear(): void {
     this._db.clear()
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Cleared');
       });
   }
 
   public destroy(): void {
     this._db.destroy()
-      .subscribe(()=> {
+      .subscribe(() => {
         this._message.success('Destroyed');
       });
   }
@@ -300,7 +303,7 @@ export class GetComponent implements OnInit, OnDestroy {
   public getKeys(): void {
     this._db.store(AccountStore)
       .keys()
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
         this._message.success();
       });
@@ -316,7 +319,7 @@ export class GetComponent implements OnInit, OnDestroy {
         mapOne(this._db.store(BuildingStore), 'building', 'buildingId', 'id'),
         mapMany(this._db.store(BuildingStore), 'buildings', 'id', 'buildingId'),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }
@@ -327,7 +330,7 @@ export class GetComponent implements OnInit, OnDestroy {
         sortDate('date'),
         limit(count, offset),
       )
-      .subscribe((values)=> {
+      .subscribe((values) => {
         this.setValues(values);
       });
   }

@@ -28,6 +28,17 @@ export abstract class Storage {
     return this.put(item);
   }
 
+  public putError(item: Data<any>): Observable<void> {
+    item._sync = {
+      ...item._sync,
+      state: SyncState.Error,
+      date: new Date(),
+      retries: Number(item._sync?.retries || 0) + 1,
+    };
+
+    return this.put(item);
+  }
+
   public abstract get(key: string | number): Observable<Data<any>>;
   public abstract gets(operators?: Operator[]): Observable<Data<any>[]>;
   public abstract put(item: Data<any>[] | Data<any>): Observable<void>;

@@ -1,5 +1,5 @@
 import { Observable, Subject, merge, of } from 'rxjs';
-import { map, mapTo, switchMap, tap } from 'rxjs/operators';
+import { filter, map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
 import { Changes, Data, StoreConfig, Sync } from '../interfaces';
@@ -15,6 +15,7 @@ export abstract class Store<T> {
   private _remote: Remote<T>;
   private _changes$ = new Subject<Changes<T>>();
 
+  protected abstract _name: string;
   protected abstract _keyName: string;
   protected abstract _revisionName: string;
 
@@ -24,7 +25,7 @@ export abstract class Store<T> {
     this._config = this._config || {};
     this._storage = this.createStorage(this);
 
-    if(_config.remote) {
+    if (_config.remote) {
       this._remote = new Remote<T>(this, _config.remote);
     }
   }
@@ -34,7 +35,7 @@ export abstract class Store<T> {
       type: 'indexDb',
     };
 
-    switch(this._config.storage.type) {
+    switch (this._config.storage.type) {
       case 'indexDb':
         return new IndexDbStorage(store);
 
@@ -55,7 +56,7 @@ export abstract class Store<T> {
   }
 
   public get name(): string {
-    return this.constructor.name;
+    return this._name;
   }
 
   public get storage(): Storage {
@@ -111,14 +112,17 @@ export abstract class Store<T> {
     )
       .pipe(
         switchMap((syncData) => {
-          if(this._remote?.saveable && navigator.onLine) {
-            return this._remote.save(syncData);
+          if (this._remote?.saveable && navigator.onLine) {
+            return this._remote.save(syncData)
+              .pipe(
+                filter(() => false),
+              );
           }
 
           return this._storage.put(syncData);
         }),
         tap(() => {
-          this.change('put', data );
+          this.change('put', data);
         }),
         mapTo(null),
       );
@@ -126,7 +130,7 @@ export abstract class Store<T> {
 
   public delete(...operators: any): Observable<any> {
     return this.gets(...operators)
-      .pipe (
+      .pipe(
         switchMap((data) => {
           const keys = data.map((item) => {
             return item[this.keyName];

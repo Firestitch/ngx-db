@@ -6,5 +6,6 @@ export type Data<T> = T & {
     revision?: number;
     message?: string;
     state?: SyncState;
+    retries?: number;
   };
 };

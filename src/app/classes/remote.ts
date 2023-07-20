@@ -28,7 +28,7 @@ export class Remote<T> {
   }
 
   public startSync(): boolean {
-    if(this._syncing || !navigator.onLine) {
+    if (this._syncing || !navigator.onLine) {
       return false;
     }
 
@@ -49,7 +49,7 @@ export class Remote<T> {
   }
 
   public syncGet(): Observable<void> {
-    if(!this._gets || this.syncing) {
+    if (!this._gets || this.syncing) {
       return of(null);
     }
 
@@ -64,7 +64,7 @@ export class Remote<T> {
             );
         }),
         switchMap((remoteData: any[]) => {
-          if(!remoteData?.length) {
+          if (!remoteData?.length) {
             return of(null);
           }
 
@@ -97,9 +97,9 @@ export class Remote<T> {
                   })
                   .map((item) => {
                     return this._store.storage.putSynced(item);
-                  } );
+                  });
 
-                if(remoteData.length === 0) {
+                if (remoteData.length === 0) {
                   return of(null);
                 }
 
@@ -124,7 +124,7 @@ export class Remote<T> {
   }
 
   public syncSave(): Observable<void> {
-    if((!this._post && !this._put) || this.syncing) {
+    if ((!this._post && !this._put) || this.syncing) {
       return of(null);
     }
 
@@ -138,7 +138,7 @@ export class Remote<T> {
       )
       .pipe(
         switchMap((data: any[]) => {
-          if(!data?.length) {
+          if (!data?.length) {
             return of(null);
           }
 
@@ -182,30 +182,30 @@ export class Remote<T> {
             state: SyncState.Processing,
           };
 
-          if(!item._sync.revision) {
-            if(!this._post) {
+          if (!item._sync.revision) {
+            if (!this._post) {
               return throwError('Remote post method not configured');
             }
 
             return this._post(item);
           }
 
-          if(!this._put) {
+          if (!this._put) {
             return throwError('Remote put method not configured');
           }
 
-          return this._put(item);
+          return this._put(item)
+            .pipe(
+              catchError((error) => {
+                return this._store.storage.putError(item)
+                  .pipe(
+                    switchMap(() => throwError(error)),
+                  );
+              }),
+            );
         }),
         switchMap((response: Data<T>) => {
           return this._store.storage.putSynced(response);
-        }),
-        catchError(() => {
-          item._sync = {
-            ...item._sync,
-            state: SyncState.Error,
-          };
-
-          return of(null);
         }),
       );
   }
@@ -226,7 +226,7 @@ export class Remote<T> {
         switchMap((pageData) => {
           data.push(...pageData);
 
-          if(pageData.length < this._limit) {
+          if (pageData.length < this._limit) {
             return of(data);
           }
 
