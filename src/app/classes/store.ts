@@ -113,16 +113,16 @@ export abstract class Store<T> {
       .pipe(
         switchMap((syncData) => {
           if (this._remote?.saveable && navigator.onLine) {
-            return this._remote.save(syncData)
-              .pipe(
-                filter(() => false),
-              );
+            return this._remote.save(syncData);
           }
 
-          return this._storage.put(syncData);
+          return this._storage.put(syncData)
+            .pipe(
+              mapTo(syncData),
+            );
         }),
-        tap(() => {
-          this.change('put', data);
+        tap((syncData) => {
+          this.change('put', syncData);
         }),
         mapTo(null),
       );
