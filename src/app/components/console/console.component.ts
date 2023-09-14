@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 
-import { ItemType } from '@firestitch/filter';
+import { ActionMode, ItemType } from '@firestitch/filter';
 import { FsListConfig, PaginationStrategy } from '@firestitch/list';
 import { FsMessage } from '@firestitch/message';
 import { FsPrompt } from '@firestitch/prompt';
@@ -67,6 +67,33 @@ export class ConsoleComponent implements OnInit {
           },
         },
       ],
+      actions: [
+        {
+          mode: ActionMode.Menu,
+          primary: false,
+          label: 'Actions',
+          items: [
+            {
+              label: 'Start Sync',
+              click: () => this.startSync(),
+            },
+            {
+              label: 'Stop Sync',
+              click: () => this.stopSync(),
+            },
+            {
+              label: 'Destroy DB',
+              click: () => this._db.destroy()
+                .subscribe(),
+            },
+            {
+              label: 'Clean DB',
+              click: () => this._db.clear()
+                .subscribe(),
+            },
+          ],
+        },
+      ],
       fetch: (query) => {
         if (!query.store) {
           return of({ data: [] });
@@ -103,8 +130,10 @@ export class ConsoleComponent implements OnInit {
               .some((key) => {
                 const item = data[key];
 
-                if (typeof (item) === 'string') {
-                  return item.toLocaleLowerCase().indexOf(query.keyword) !== -1;
+                if (item !== null || item !== undefined) {
+                  try {
+                    return item.toString().toLocaleLowerCase().indexOf(query.keyword) !== -1;
+                  } catch (e) { }
                 }
 
                 return false;
