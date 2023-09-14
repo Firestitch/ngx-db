@@ -1,15 +1,15 @@
 import { Observable, Subject, merge, of } from 'rxjs';
-import { filter, map, mapTo, switchMap, tap } from 'rxjs/operators';
+import { map, mapTo, switchMap, tap } from 'rxjs/operators';
 
-import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
-import { Changes, Data, StoreConfig } from '../interfaces';
-import { Operator } from '../types';
 import { SyncState } from '../enums';
+import { Changes, Data, StoreConfig } from '../interfaces';
+import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
+import { Operator } from '../types';
 
 import { Remote } from './remote';
 
 
-export abstract class Store<T> {
+export class Store<T> {
 
   public static storeName: string;
   public static keyName: string;

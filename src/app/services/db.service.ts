@@ -30,8 +30,16 @@ export class FsDb {
     return this;
   }
 
-  public store(store): Store<any> {
-    return this._stores.get(store.storeName);
+  public store(store: string | any): Store<any> {
+    if (typeof (store) === 'string') {
+      return this._stores.get(store);
+    }
+
+    return this._stores.get((store as any).storeName);
+  }
+
+  public get stores(): Store<any>[] {
+    return Array.from(this._stores.values());
   }
 
   public init(): Observable<any> {

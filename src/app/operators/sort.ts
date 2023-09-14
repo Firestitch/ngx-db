@@ -1,5 +1,5 @@
 export function sort(
-  name: string,
+  name: string | string[],
   direction: 'desc' | 'asc' = 'asc',
   options?: { nulls?: 'first' | 'last'; type?: 'string' | 'number' | 'date' },
 ) {

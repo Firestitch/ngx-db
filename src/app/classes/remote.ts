@@ -1,9 +1,9 @@
 import { Observable, concat, merge, of, throwError } from 'rxjs';
 import { catchError, filter, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
 
+import { SyncState } from '../enums';
 import { Data, RemoteConfig } from '../interfaces';
 import { filter as operatorFilter } from '../operators';
-import { SyncState } from '../enums';
 
 import { Store } from './store';
 
@@ -184,14 +184,20 @@ export class Remote<T> {
 
           if (!item._sync.revision) {
             if (!this._post) {
-              return throwError('Remote post method not configured');
+              return this._store.storage.putError(item)
+                .pipe(
+                  switchMap(() => throwError('Remote post method not configured')),
+                );
             }
 
             return this._post(item);
           }
 
           if (!this._put) {
-            return throwError('Remote put method not configured');
+            return this._store.storage.putError(item)
+              .pipe(
+                switchMap(() => throwError('Remote put method not configured')),
+              );
           }
 
           return this._put(item)

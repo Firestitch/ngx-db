@@ -1,10 +1,16 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 
+import { ItemType } from '@firestitch/filter';
+import { FsListConfig, PaginationStrategy } from '@firestitch/list';
 import { FsMessage } from '@firestitch/message';
 import { FsPrompt } from '@firestitch/prompt';
 
-import { switchMap } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
+import { Store } from '../../classes';
+import { SyncStates } from '../../consts';
+import { filter, limit, sort, sortDate } from '../../operators';
 import { FsDb } from '../../services';
 
 
@@ -14,13 +20,121 @@ import { FsDb } from '../../services';
   styleUrls: ['./console.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConsoleComponent {
+export class ConsoleComponent implements OnInit {
+
+  public stores: Store<any>[];
+  public store: Store<any>;
+
+  public listConfig: FsListConfig;
 
   constructor(
     private _db: FsDb,
     private _message: FsMessage,
     private _prompt: FsPrompt,
-  ) {
+  ) { }
+
+  public ngOnInit(): void {
+    this.stores = this._db.stores;
+
+    this.listConfig = {
+      chips: true,
+      paging: {
+        strategy: PaginationStrategy.Offset,
+      },
+      filters: [
+        {
+          name: 'keyword',
+          type: ItemType.Keyword,
+          label: 'Search',
+        },
+        {
+          name: 'store',
+          type: ItemType.Select,
+          label: 'Store',
+          values: () => {
+            return this._db.stores
+              .map((store) => {
+                return { name: store.name, value: store.name };
+              });
+          },
+        },
+        {
+          name: 'syncState',
+          type: ItemType.Select,
+          label: 'Sync State',
+          values: () => {
+            return SyncStates;
+          },
+        },
+      ],
+      fetch: (query) => {
+        if (!query.store) {
+          return of({ data: [] });
+        }
+
+        const store = this._db.store(query.store);
+
+        if (!store) {
+          return of({ data: [] });
+        }
+
+        const operators: any = [];
+        const orderDirection = query.order?.match(/,(.*?)$/);
+
+        const getOperators: any = [];
+        if (query.order?.match(/syncDate/)) {
+          getOperators.push(sortDate(['_sync', 'date'], orderDirection[1] || 'asc'));
+        }
+
+        if (query.order?.match(/syncState/)) {
+          getOperators.push(sort(['_sync', 'date'], orderDirection[1] || 'asc'));
+        }
+
+
+        if (query.syncState) {
+          operators.push(filter((data) => {
+            return data._sync?.state === query.syncState;
+          }));
+        }
+
+        if (query.keyword) {
+          operators.push(filter((data) => {
+            return Object.keys(data)
+              .some((key) => {
+                const item = data[key];
+
+                if (typeof (item) === 'string') {
+                  return item.toLocaleLowerCase().indexOf(query.keyword) !== -1;
+                }
+
+                return false;
+              });
+          }));
+        }
+
+        return forkJoin({
+          storeData: store.gets(...[
+            ...getOperators,
+            ...operators,
+            limit(query.limit, query.offset),
+          ]),
+          records: store.count(...operators),
+        })
+          .pipe(
+            map(({ storeData, records }) => {
+              return {
+                data: storeData.map((data) => {
+                  const sync = data._sync;
+                  delete data._sync;
+
+                  return { data, sync };
+                }),
+                paging: { records, offset: query.offset },
+              };
+            }),
+          );
+      },
+    };
   }
 
   public startSync(): void {

@@ -1,11 +1,11 @@
-import { parse } from '@firestitch/date';
 import { toString } from '@firestitch/common';
+import { parse } from '@firestitch/date';
 
 import { Observable, Subscriber, combineLatest, of } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 
-import { MapOneOperator, Operator } from '../types';
 import { includes } from '../operators';
+import { MapOneOperator, Operator } from '../types';
 
 import { OperatorData } from '.';
 
@@ -42,7 +42,7 @@ export class IndexDbData {
     const keySortOperator = this.keySortOperator;
 
     let cursor: IDBObjectStore | IDBIndex = this._objectStore;
-    if(keySortOperator) {
+    if (keySortOperator) {
       const keySortConfig = keySortOperator();
       cursor = this._objectStore.index(keySortConfig.name);
     }
@@ -52,14 +52,14 @@ export class IndexDbData {
       let index = 0;
 
       request.onsuccess = (event: any) => {
-        if(!event.target.result) {
+        if (!event.target.result) {
           return this._complete(observer);
         }
 
         const value = event.target.result.value;
         const match = this._operatorData.match(value);
 
-        if(match) {
+        if (match) {
           this._data.push(value);
           index++;
         }
@@ -80,7 +80,7 @@ export class IndexDbData {
   }
 
   private _limit(): void {
-    if(!this._operatorData.limit) {
+    if (!this._operatorData.limit) {
       return;
     }
 
@@ -91,25 +91,25 @@ export class IndexDbData {
   private _sort(): void {
     const sortOperators = this.sortOperators;
 
-    if(sortOperators.length) {
+    if (sortOperators.length) {
       sortOperators.forEach((sortOperator) => {
         const sortOperatorConfig = sortOperator();
         this._data = this._data
           .sort((o1, o2) => {
-            const v1 = o1[sortOperatorConfig.name] ?? null;
-            const v2 = o2[sortOperatorConfig.name] ?? null;
+            const v1 = this._getData(o1, sortOperatorConfig.name) ?? null;
+            const v2 = this._getData(o2, sortOperatorConfig.name) ?? null;
 
-            if(sortOperatorConfig.options.type === 'number') {
+            if (sortOperatorConfig.options.type === 'number') {
               return v1 - v2;
             }
 
-            if(sortOperatorConfig.options.type === 'date') {
+            if (sortOperatorConfig.options.type === 'date') {
               let d1 = typeof v1 === 'string' ? parse(v1) : v1;
               let d2 = typeof v2 === 'string' ? parse(v2) : v2;
 
-              if(sortOperatorConfig.options.nulls === 'last') {
-                d1 = d1 === null ? new Date(9999,1,1) : d1;
-                d2 = d2 === null ? new Date(9999,1,1) : d2;
+              if (sortOperatorConfig.options.nulls === 'last') {
+                d1 = d1 === null ? new Date(9999, 1, 1) : d1;
+                d2 = d2 === null ? new Date(9999, 1, 1) : d2;
               }
 
               const t1 = d1 ? d1.getTime() : 0;
@@ -121,11 +121,32 @@ export class IndexDbData {
             return toString(v1).localeCompare(toString(v2));
           });
 
-        if(sortOperatorConfig.direction === 'desc') {
+        if (sortOperatorConfig.direction === 'desc') {
           this._data.reverse();
         }
       });
     }
+  }
+
+  private _getData(object, keys): any {
+    object = object || {};
+
+    if (typeof (keys) === 'string') {
+      return object[keys];
+    }
+
+    if (Array.isArray(keys)) {
+      if (keys.length === 1) {
+        return object[keys[0]];
+      }
+
+      keys = [...keys];
+      const key = keys.shift();
+
+      return this._getData(object[key], keys);
+    }
+
+    return undefined;
   }
 
   private _map(): Observable<any> {

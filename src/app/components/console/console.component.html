@@ -1,12 +1,35 @@
+<h2>Data</h2>
+<fs-list [config]="listConfig">
+  <fs-list-column title="Data" [sortable]="true" name="data">
+    <ng-template fs-list-cell let-row="row">
+      {{row.data|json}}
+    </ng-template>
+  </fs-list-column>
+  <fs-list-column title="Sync State" [sortable]="true" name="syncState">
+    <ng-template fs-list-cell let-row="row">
+      {{row.sync?.state}}
+    </ng-template>
+  </fs-list-column>
+  <fs-list-column title="Synced" [sortable]="true" name="syncDate">
+    <ng-template fs-list-cell let-row="row">
+      <fs-date-ago [date]="row.sync?.date"></fs-date-ago>
+    </ng-template>
+  </fs-list-column>
+  <fs-list-column title="Revision">
+    <ng-template fs-list-cell let-row="row">
+      {{row.sync?.revision}}
+    </ng-template>
+  </fs-list-column>
+</fs-list>
+
 <h2>Actions</h2>
 <a 
-    mat-button 
+    mat-raised-button 
     (click)="startSync()">
   Start Sync
 </a>
-
 <a 
-    mat-button 
+    mat-raised-button 
     (click)="stopSync()">
   Stop Sync
 </a>

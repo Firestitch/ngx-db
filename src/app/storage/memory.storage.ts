@@ -15,7 +15,8 @@ export class MemoryStorage extends Storage {
     const data = Object.values(this._data)
       .filter((item: any) => {
         return operatorData.match(item);
-      });
+      })
+      .map((item: any) => ({ ...item }));
 
     return of(data);
   }
@@ -50,7 +51,7 @@ export class MemoryStorage extends Storage {
     return of(this._data[key]);
   }
 
-  public get data(): Observable<{ [key: string]: any}> {
+  public get data(): Observable<{ [key: string]: any }> {
     return of(this._data);
   }
 

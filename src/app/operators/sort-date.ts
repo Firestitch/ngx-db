@@ -1,7 +1,7 @@
 import { sort } from './sort';
 
 export function sortDate(
-  name: string,
+  name: string | string[],
   direction: 'desc' | 'asc' = 'asc',
   options?: { nulls?: 'first' | 'last' },
 ) {
