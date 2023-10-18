@@ -149,10 +149,7 @@ export class Remote<T> {
                   catchError((error) => {
                     console.error('Sync save error', error);
 
-                    return of(null)
-                      .pipe(
-                        filter(() => false),
-                      );
+                    return of(null);
                   }),
                 );
             }),
