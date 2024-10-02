@@ -63,6 +63,7 @@
     "@firestitch/form": "^14.0.2",
     "@firestitch/iframe": "^14.0.0",
     "@firestitch/label": "^14.0.0",
+    "@firestitch/html": "^14.0.0",
     "@firestitch/lint": "^14.0.11",
     "@firestitch/list": "^14.0.0",
     "@firestitch/menu": "^14.0.0",
