@@ -208,7 +208,7 @@ export class IndexDb {
       };
 
       request.onsuccess = (event) => {
-        observer.next();
+        observer.next(null);
         observer.complete();
       };
     });

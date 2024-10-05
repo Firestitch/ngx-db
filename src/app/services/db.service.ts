@@ -96,7 +96,7 @@ export class FsDb {
           }),
           switchMap(() => this.sync()),
           tap(() => {
-            observer.next();
+            observer.next(null);
             observer.complete();
           }),
           catchError((error) => {
@@ -112,7 +112,7 @@ export class FsDb {
   }
 
   public stopSync(): void {
-    this._sync$.next();
+    this._sync$.next(null);
     this._sync$.complete();
   }
 
