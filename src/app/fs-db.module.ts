@@ -14,24 +14,19 @@ import { FsDb } from './services';
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    FormsModule,
-
-    MatButtonModule,
-    MatSelectModule,
-    MatFormFieldModule,
-
-    FsListModule,
-    FsDateModule,
-
-  ],
-  declarations: [
-    ConsoleComponent,
-  ],
-  exports: [
-    ConsoleComponent,
-  ],
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        FsListModule,
+        FsDateModule,
+        ConsoleComponent,
+    ],
+    exports: [
+        ConsoleComponent,
+    ],
 })
 export class FsDbModule {
   public static forRoot(): ModuleWithProviders<FsDbModule> {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 
 import { ActionMode, ItemType } from '@firestitch/filter';
-import { FsListConfig, PaginationStrategy } from '@firestitch/list';
+import { FsListConfig, PaginationStrategy, FsListModule } from '@firestitch/list';
 import { FsMessage } from '@firestitch/message';
 import { FsPrompt } from '@firestitch/prompt';
 
@@ -12,13 +12,21 @@ import { Store } from '../../classes';
 import { SyncStates } from '../../consts';
 import { filter, limit, sort, sortDate } from '../../operators';
 import { FsDb } from '../../services';
+import { FsDateModule } from '@firestitch/date';
+import { JsonPipe } from '@angular/common';
 
 
 @Component({
-  selector: 'fs-db-console',
-  templateUrl: './console.component.html',
-  styleUrls: ['./console.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'fs-db-console',
+    templateUrl: './console.component.html',
+    styleUrls: ['./console.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+        FsListModule,
+        FsDateModule,
+        JsonPipe,
+    ],
 })
 export class ConsoleComponent implements OnInit {
 
