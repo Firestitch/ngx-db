@@ -1,6 +1,4 @@
-import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { MatDialog } from '@angular/material/dialog';
 
@@ -30,18 +28,18 @@ import { JsonPipe } from '@angular/common';
     imports: [MatAnchor, JsonPipe],
 })
 export class GetComponent implements OnInit, OnDestroy {
+  private _db = inject(FsDb);
+  private _message = inject(FsMessage);
+  private _dialog = inject(MatDialog);
+  private _cdRef = inject(ChangeDetectorRef);
+
 
   public id = '1';
   public values;
 
   private _destroy$ = new Subject();
 
-  constructor(
-    private _db: FsDb,
-    private _message: FsMessage,
-    private _dialog: MatDialog,
-    private _cdRef: ChangeDetectorRef,
-  ) {
+  constructor() {
     const accountRemote: RemoteConfig = {
       gets: ({ limit, offset }) =>
         of(AccountData)

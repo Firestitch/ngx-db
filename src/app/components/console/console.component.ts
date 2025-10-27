@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 
 import { ActionMode, ItemType } from '@firestitch/filter';
 import { FsListConfig, PaginationStrategy, FsListModule } from '@firestitch/list';
@@ -29,17 +29,15 @@ import { JsonPipe } from '@angular/common';
     ],
 })
 export class ConsoleComponent implements OnInit {
+  private _db = inject(FsDb);
+  private _message = inject(FsMessage);
+  private _prompt = inject(FsPrompt);
+
 
   public stores: Store<any>[];
   public store: Store<any>;
 
   public listConfig: FsListConfig;
-
-  constructor(
-    private _db: FsDb,
-    private _message: FsMessage,
-    private _prompt: FsPrompt,
-  ) { }
 
   public ngOnInit(): void {
     this.stores = this._db.stores;
