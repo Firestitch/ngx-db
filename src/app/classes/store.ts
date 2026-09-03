@@ -2,7 +2,8 @@ import { Observable, Subject, merge, of } from 'rxjs';
 import { map, mapTo, switchMap, tap } from 'rxjs/operators';
 
 import { SyncState } from '../enums';
-import { Changes, Data, StoreConfig } from '../interfaces';
+import { Changes, Data, DestroyOptions, StoreConfig } from '../interfaces';
+import { filter as operatorFilter } from '../operators';
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
 import { Operator } from '../types';
 
@@ -132,7 +133,7 @@ export class Store<T> {
     return this.gets(...operators)
       .pipe(
         switchMap((data) => {
-          const keys = data.map((item) => {
+          const keys = (data || []).map((item) => {
             return item[this.keyName];
           });
 
@@ -158,8 +159,19 @@ export class Store<T> {
       );
   }
 
-  public destroy(): Observable<void> {
+  public destroy(options?: DestroyOptions): Observable<void> {
     this._remote?.destroy();
+
+    if (options?.preserveUnsynced) {
+      // Delete only what has reached the server; pending, processing and error
+      // records stay so the next sync can push them. The object store survives.
+      return this.delete(
+        operatorFilter((item: Data<T>) => item._sync?.state === SyncState.Synced),
+      )
+        .pipe(
+          mapTo(null),
+        );
+    }
 
     return this._storage.destroy();
   }
