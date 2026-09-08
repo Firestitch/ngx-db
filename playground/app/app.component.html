@@ -1,8 +1,21 @@
 <fs-examples [config]="config">
 
-  <fs-example name="Get Data" componentName="app-get">
-    <fs-db-console></fs-db-console>
+  <fs-example name="Store" componentName="app-get">
+    <p class="example-intro">
+      An offline-first database in the browser. It holds 20 countries, each belonging to a
+      region. Demo data loads automatically — click any button and the result appears on
+      the right.
+    </p>
     <app-get></app-get>
   </fs-example>
-</fs-examples>
 
+  <fs-example name="DB Console">
+    <p class="example-intro">
+      A component the library ships (<code>&lt;fs-db-console&gt;</code>) for seeing what is
+      stored on the device. The buttons above change data; this shows the result — each
+      record, whether it has reached the server yet, and when it last synced.
+    </p>
+    <fs-db-console></fs-db-console>
+  </fs-example>
+
+</fs-examples>

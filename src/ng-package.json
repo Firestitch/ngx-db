@@ -2,7 +2,7 @@
   "$schema": "../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../package",
   "lib": {
-    "entryFile": "public.api.ts"
+    "entryFile": "public_api.ts"
   },
   "allowedNonPeerDependencies": [
     "."

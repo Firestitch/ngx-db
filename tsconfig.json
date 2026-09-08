@@ -3,7 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@firestitch/db": [
-        "src/public.api.ts"
+        "src/public_api.ts"
       ]
     }
   }

@@ -1,152 +1,27 @@
 
-export const AccountData = [{
-  id: 81,
-  country: 'Brazil',
-  date: '2023-04-10T23:34:02Z',
-  areaId: 1,
-}, {
-  id: 56,
-  country: 'Thailand',
-  date: '2023-06-08T09:33:54Z',
-  areaId: 2,
-}, {
-  id: 14,
-  country: 'China',
-  date: '2022-12-19T05:59:51Z',
-  areaId: 2,
-}, {
-  id: 61,
-  country: 'Armenia',
-  date: '2022-10-27T05:04:51Z',
-  areaId: 2,
-}, {
-  id: 11,
-  country: 'Kazakhstan',
-  date: '2023-02-28T10:02:58Z',
-  areaId: 4,
-}, {
-  id: 11,
-  country: 'Sweden',
-  date: '2022-10-07T12:11:35Z',
-  areaId: 2,
-}, {
-  id: 81,
-  country: 'Portugal',
-  date: '2023-03-12T03:49:52Z',
-  areaId: 3,
-}, {
-  id: 65,
-  country: 'Nicaragua',
-  date: '2023-06-26T03:42:42Z',
-  areaId: 4,
-}, {
-  id: 34,
-  country: 'Tanzania',
-  date: '2022-10-06T21:28:18Z',
-  areaId: 1,
-}, {
-  id: 46,
-  country: 'Bulgaria',
-  date: '2022-11-29T00:07:08Z',
-  areaId: 4,
-}, {
-  id: 26,
-  country: 'United States',
-  date: '2023-03-28T09:54:55Z',
-  areaId: 3,
-}, {
-  id: 14,
-  country: 'Russia',
-  date: '2023-03-27T10:57:49Z',
-  areaId: 1,
-}, {
-  id: 34,
-  country: 'Philippines',
-  date: '2023-06-22T18:37:39Z',
-  areaId: 3,
-}, {
-  id: 90,
-  country: 'China',
-  date: '2023-02-10T13:31:11Z',
-  areaId: 5,
-}, {
-  id: 8,
-  country: 'China',
-  date: '2023-03-27T11:53:01Z',
-  areaId: 4,
-}, {
-  id: 54,
-  country: 'Canada',
-  date: '2023-01-07T15:56:04Z',
-  areaId: 4,
-}, {
-  id: 74,
-  country: 'Canada',
-  date: '2023-06-29T07:22:28Z',
-  areaId: 3,
-}, {
-  id: 44,
-  country: 'South Africa',
-  date: '2022-11-17T10:23:37Z',
-  areaId: 1,
-}, {
-  id: 88,
-  country: 'Moldova',
-  date: '2023-05-31T01:11:41Z',
-  areaId: 4,
-}, {
-  id: 29,
-  country: 'Poland',
-  date: '2023-05-31T03:50:38Z',
-  areaId: 3,
-}, {
-  id: 25,
-  country: 'Germany',
-  date: '2023-05-03T21:46:59Z',
-  areaId: 2,
-}, {
-  id: 32,
-  country: 'Malaysia',
-  date: '2022-07-18T16:20:24Z',
-  areaId: 1,
-}, {
-  id: 91,
-  country: 'Egypt',
-  date: '2023-06-02T16:10:15Z',
-  areaId: 2,
-}, {
-  id: 64,
-  country: 'Indonesia',
-  date: '2023-03-07T19:33:16Z',
-  areaId: 1,
-}, {
-  id: 27,
-  country: 'Belarus',
-  date: '2022-10-03T18:17:59Z',
-  areaId: 3,
-}, {
-  id: 80,
-  country: 'China',
-  date: '2023-01-22T08:36:03Z',
-  areaId: 3,
-}, {
-  id: 59,
-  country: 'Kenya',
-  date: '2022-07-30T13:43:35Z',
-  areaId: 1,
-}, {
-  id: 23,
-  country: 'Indonesia',
-  date: '2023-05-11T19:07:07Z',
-  areaId: 4,
-}, {
-  id: 53,
-  country: 'United States',
-  date: '2023-04-18T22:01:11Z',
-  areaId: 1,
-}, {
-  id: 92,
-  country: 'Indonesia',
-  date: '2023-06-27T10:12:44Z',
-  areaId: 2,
-}];
+// 20 countries, each in a real region, so the joins in the demo mean something.
+export const AccountData = [
+  { id: 1, country: 'Sweden', regionId: 1, population: 10.5, date: '2023-01-07T15:56:04Z' },
+  { id: 2, country: 'Portugal', regionId: 1, population: 10.3, date: '2023-03-12T03:49:52Z' },
+  { id: 3, country: 'Germany', regionId: 1, population: 83.2, date: '2023-05-03T21:46:59Z' },
+  { id: 4, country: 'Poland', regionId: 1, population: 37.7, date: '2023-05-31T03:50:38Z' },
+  { id: 5, country: 'Moldova', regionId: 1, population: 2.6, date: '2023-05-31T01:11:41Z' },
+
+  { id: 6, country: 'Indonesia', regionId: 2, population: 273.5, date: '2023-03-07T19:33:16Z' },
+  { id: 7, country: 'China', regionId: 2, population: 1412.0, date: '2023-02-10T13:31:11Z' },
+  { id: 8, country: 'Thailand', regionId: 2, population: 71.6, date: '2023-06-08T09:33:54Z' },
+  { id: 9, country: 'Malaysia', regionId: 2, population: 33.6, date: '2022-07-18T16:20:24Z' },
+  { id: 10, country: 'Philippines', regionId: 2, population: 113.9, date: '2023-06-22T18:37:39Z' },
+  { id: 11, country: 'Kazakhstan', regionId: 2, population: 19.4, date: '2023-02-28T10:02:58Z' },
+
+  { id: 12, country: 'Canada', regionId: 3, population: 38.9, date: '2023-06-29T07:22:28Z' },
+  { id: 13, country: 'United States', regionId: 3, population: 333.3, date: '2023-03-28T09:54:55Z' },
+  { id: 14, country: 'Brazil', regionId: 3, population: 215.3, date: '2023-04-10T23:34:02Z' },
+  { id: 15, country: 'Nicaragua', regionId: 3, population: 6.9, date: '2023-06-26T03:42:42Z' },
+
+  { id: 16, country: 'Kenya', regionId: 4, population: 54.0, date: '2022-07-30T13:43:35Z' },
+  { id: 17, country: 'Egypt', regionId: 4, population: 109.3, date: '2023-06-02T16:10:15Z' },
+  { id: 18, country: 'Tanzania', regionId: 4, population: 63.6, date: '2022-10-06T21:28:18Z' },
+  { id: 19, country: 'South Africa', regionId: 4, population: 60.0, date: '2022-11-17T10:23:37Z' },
+  { id: 20, country: 'Nigeria', regionId: 4, population: 218.5, date: null },
+];

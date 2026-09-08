@@ -1,169 +1,98 @@
 <div class="container">
   <div class="left">
-    <h2>Get</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="gets()">
-      All
-    </a>
+    <section class="group">
+      <h2>Auto sync</h2>
+      <div class="actions">
+        <button
+            mat-flat-button
+            [color]="autoSync ? 'warn' : 'primary'"
+            type="button"
+            (click)="toggleAutoSync()">
+          {{ autoSync ? 'Turn auto sync off' : 'Turn auto sync on' }}
+        </button>
+      </div>
+      @if (autoSync) {
+        <p class="note">
+          Re-checking the server every 5s, so deleted records will come back.
+        </p>
+      }
+    </section>
 
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsMatchOr()">
-      Match Canada or Equal AreaId 3
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getKeys()">
-      Keys
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsIndonesia()">
-      Equals Indonesia
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsMatchCase()">
-      Match sweden
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortName()">
-      Sort Name
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortAreaId()">
-      Sort Area Id
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortDate()">
-      Sort Date
-    </a>
-
-    <h2>Limit</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsLimit(2, 2)">
-      Limit 2 Offset 2
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsLimit(2, 4)">
-      Limit 2 Offset 4
-    </a>
-
-
-    <h2>Count</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="count()">
-      Count Area ID  2
-    </a>
-
-    <h2>Put</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="put({ id: id, country: 'India', date: null, areaId: 7 })">
-      India
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="putIndia()">
-      Update India
-    </a>
-
-    <h2>Post</h2>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="post()">
-      Account Post
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="filePost()">
-      File Post
-    </a>
-
-    <h2>Delete</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="deleteAll()">
-      Account Delete All
-    </a>
-    
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="clear()">
-      Clear
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="destroy()">
-      Destroy
-    </a>
-
-
-    <h2>Sync</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="startSync()">
-      Start Sync
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="stopSync()">
-      Stop Sync
-    </a>
-
-    <h2>Console</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="openConsole()">
-      Open Console
-    </a>
+    @for (group of actionGroups; track group.name) {
+      <section class="group">
+        <h2>{{ group.name }}</h2>
+        <div class="actions">
+          @for (action of group.actions; track action.name) {
+            <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="run(action)">
+              {{ action.name }}
+            </button>
+          }
+        </div>
+      </section>
+    }
   </div>
+
   <div class="right">
-    <fieldset>
-      <legend>
-        Values
-      </legend>
-      {{values|json}}
-    </fieldset>
+    <div class="result">
+      <div class="result-header">
+        <div class="result-title">
+          <strong>{{ lastAction || 'Results' }}</strong>
+          @if (resultCount !== null) {
+            <span class="badge">{{ resultCount }} rows</span>
+          }
+        </div>
+        <div class="result-tools">
+          @if (duration !== null) {
+            <span class="duration">{{ duration }}ms</span>
+          }
+          @if (rows.length) {
+            <button type="button" class="link" (click)="raw = !raw">
+              {{ raw ? 'Table' : 'Raw' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (error) {
+        <pre class="error">{{ error }}</pre>
+      } @else if (values === undefined || values === null) {
+        <div class="empty">Loading demo data…</div>
+      } @else if (resultCount === 0) {
+        <div class="empty">No records. Click “Reload demo data” to start over.</div>
+      } @else if (!rows.length || raw) {
+        <pre class="values">{{ values | json }}</pre>
+      } @else {
+        <div class="table-wrap">
+          <table class="rows">
+            <thead>
+              <tr>
+                @for (column of columns; track column) {
+                  <th>{{ column }}</th>
+                }
+                <th>Saved</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows; track $index) {
+                <tr>
+                  @for (column of columns; track column) {
+                    <td>{{ cell(row, column) }}</td>
+                  }
+                  <td>
+                    <span class="sync sync-{{ row._sync?.state || 'server' }}">
+                      {{ row._sync?.state || 'from server' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
   </div>
 </div>

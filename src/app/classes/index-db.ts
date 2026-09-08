@@ -1,7 +1,7 @@
-import { Observable, Subscriber, concat, of } from 'rxjs';
+import { Observable, Subscriber, merge, of } from 'rxjs';
 import { finalize, map, switchMap, tap, toArray } from 'rxjs/operators';
 
-import { Operator } from '../types';
+import { Operator, StorageKey } from '../types';
 import { IndexDbDescribe } from '../interfaces';
 
 import { OperatorData } from './operator-data';
@@ -67,7 +67,7 @@ export class IndexDb {
       );
   }
 
-  public get(store: string, id: string | number): Observable<any> {
+  public get(store: string, id: StorageKey): Observable<any> {
     if(id === null || id === undefined) {
       return of(null);
     }
@@ -75,6 +75,15 @@ export class IndexDb {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
+          // A destroyed store is gone until init() recreates it. Reading from it
+          // is "no such record", not a hard failure — throwing here killed the
+          // sync loop with NotFoundError after destroy().
+          if(!db.objectStoreNames.contains(store)) {
+            db.close();
+
+            return of(undefined);
+          }
+
           return new Observable((observer) => {
             const transaction = db.transaction(store, 'readonly');
             const objectStore = transaction.objectStore(store);
@@ -102,6 +111,12 @@ export class IndexDb {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
+          if(!db.objectStoreNames.contains(store)) {
+            db.close();
+
+            return of(null);
+          }
+
           return new Observable((observer) => {
             const transaction = db.transaction(store, 'readwrite');
             const objectStore = transaction.objectStore(store);
@@ -125,15 +140,26 @@ export class IndexDb {
       );
   }
 
-  public delete(store: string, keys: string | string[]): Observable<any> {
+  public delete(store: string, keys: StorageKey | StorageKey[]): Observable<any> {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
+          if(!db.objectStoreNames.contains(store)) {
+            db.close();
+
+            return of([]);
+          }
+
           const transaction = db.transaction(store, 'readwrite');
           const objectStore = transaction.objectStore(store);
           keys = Array.isArray(keys) ? keys : [keys];
 
-          return concat(...keys.map((key) => {
+          // merge, not concat: an IndexedDB transaction auto-commits once the
+          // event loop yields with no pending requests. concat subscribes lazily,
+          // so the second delete would be issued against an already committed
+          // transaction and throw TransactionInactiveError. merge queues every
+          // request up front, while the transaction is still active.
+          return merge(...keys.map((key) => {
             return new Observable((observer) => {
               const request = objectStore.delete(key);
 
@@ -161,6 +187,12 @@ export class IndexDb {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
+          if(!db.objectStoreNames.contains(store)) {
+            db.close();
+
+            return of([]);
+          }
+
           const operatorData = new OperatorData(operators);
           const iterable = new IndexDbData(db, store, operatorData);
 
@@ -174,10 +206,18 @@ export class IndexDb {
       );
   }
 
-  public put(store, data): Observable<any> {
+  public put(store: string, data: any): Observable<any> {
     return this.open()
       .pipe(
         switchMap((db: IDBDatabase) => {
+          // Writing to a destroyed store must not throw; the caller can init()
+          // to recreate it.
+          if(!db.objectStoreNames.contains(store)) {
+            db.close();
+
+            return of(null);
+          }
+
           return new Observable((observer: Subscriber<any>) => {
             const transaction = db.transaction(store, 'readwrite');
             const objectStore = transaction.objectStore(store);

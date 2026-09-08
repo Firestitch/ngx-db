@@ -1,13 +1,11 @@
-import { toString } from '@firestitch/common';
-import { parse } from '@firestitch/date';
+import { Observable, Subscriber } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 
-import { Observable, Subscriber, combineLatest, of } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { Operator } from '../types';
 
-import { includes } from '../operators';
-import { MapOneOperator, Operator } from '../types';
+import { applyLimit, applyMap, applySort } from './operator-apply';
+import { OperatorData } from './operator-data';
 
-import { OperatorData } from '.';
 
 export class IndexDbData {
 
@@ -49,7 +47,6 @@ export class IndexDbData {
 
     return new Observable((observer: Subscriber<any>) => {
       const request = cursor.openCursor();
-      let index = 0;
 
       request.onsuccess = (event: any) => {
         if (!event.target.result) {
@@ -57,106 +54,28 @@ export class IndexDbData {
         }
 
         const value = event.target.result.value;
-        const match = this._operatorData.match(value);
 
-        if (match) {
+        if (this._operatorData.match(value)) {
           this._data.push(value);
-          index++;
         }
 
         event.target.result.continue();
       };
 
-      request.onerror = () => {
-        observer.error();
+      request.onerror = (event) => {
+        observer.error(event);
       };
     })
       .pipe(
-        tap(() => this._sort()),
-        tap(() => this._limit()),
-        switchMap(() => this._map()),
-        map(() => this._data),
+        // Sorting handled by an IndexedDB index is skipped here; the remaining
+        // sorts, plus limit and the map operators, are shared with the other
+        // storage backends so every backend behaves the same.
+        tap(() => {
+          this._data = applySort(this._data, this.sortOperators);
+          this._data = applyLimit(this._data, this._operatorData);
+        }),
+        switchMap(() => applyMap(this._data, this._operatorData)),
       );
-  }
-
-  private _limit(): void {
-    if (!this._operatorData.limit) {
-      return;
-    }
-
-    const offset = this._operatorData.limit.offset;
-    this._data = this._data.slice(offset, offset + this._operatorData.limit.count);
-  }
-
-  private _sort(): void {
-    const sortOperators = this.sortOperators;
-
-    if (sortOperators.length) {
-      sortOperators.forEach((sortOperator) => {
-        const sortOperatorConfig = sortOperator();
-        this._data = this._data
-          .sort((o1, o2) => {
-            const v1 = this._getData(o1, sortOperatorConfig.name) ?? null;
-            const v2 = this._getData(o2, sortOperatorConfig.name) ?? null;
-
-            if (sortOperatorConfig.options.type === 'number') {
-              return v1 - v2;
-            }
-
-            if (sortOperatorConfig.options.type === 'date') {
-              let d1 = typeof v1 === 'string' ? parse(v1) : v1;
-              let d2 = typeof v2 === 'string' ? parse(v2) : v2;
-
-              if (sortOperatorConfig.options.nulls === 'last') {
-                d1 = d1 === null ? new Date(9999, 1, 1) : d1;
-                d2 = d2 === null ? new Date(9999, 1, 1) : d2;
-              }
-
-              const t1 = d1 ? d1.getTime() : 0;
-              const t2 = d2 ? d2.getTime() : 0;
-
-              return t1 > t2 ? 1 : -1;
-            }
-
-            return toString(v1).localeCompare(toString(v2));
-          });
-
-        if (sortOperatorConfig.direction === 'desc') {
-          this._data.reverse();
-        }
-      });
-    }
-  }
-
-  private _getData(object, keys): any {
-    object = object || {};
-
-    if (typeof (keys) === 'string') {
-      return object[keys];
-    }
-
-    if (Array.isArray(keys)) {
-      if (keys.length === 1) {
-        return object[keys[0]];
-      }
-
-      keys = [...keys];
-      const key = keys.shift();
-
-      return this._getData(object[key], keys);
-    }
-
-    return undefined;
-  }
-
-  private _map(): Observable<any> {
-    const mapOperators = this._operatorData.mapOneOperators
-      .map((operator: () => MapOneOperator) => {
-        return this._mapOne(operator());
-      })
-      .filter((value) => !!value);
-
-    return mapOperators.length ? combineLatest(...mapOperators) : of(this._data);
   }
 
   private _complete(observer) {
@@ -164,35 +83,4 @@ export class IndexDbData {
     observer.complete();
   }
 
-  private _mapOne(mapOne: MapOneOperator): Observable<any> {
-    const references = [
-      ...new Set(this._data
-        .map((item) => item[mapOne.referenceName])),
-    ]
-      .filter((item) => !!item);
-
-    return (mapOne.store).gets(
-      includes(mapOne.foreignReferenceName, references),
-    )
-      .pipe(
-        tap((data) => {
-          data = data
-            .reduce((accum, item) => {
-              return {
-                ...accum,
-                [item[mapOne.foreignReferenceName]]: item,
-              };
-            }, {});
-
-          this._data
-            .forEach((item) => {
-              const key = item[mapOne.referenceName];
-              item[mapOne.propertyName] = data[key];
-            });
-        }),
-      );
-
-  }
-
 }
-

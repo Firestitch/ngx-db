@@ -4,6 +4,8 @@ import { Observable, Subject, concat, merge, of, throwError, timer } from 'rxjs'
 import { catchError, filter, switchMap, takeUntil, tap, toArray } from 'rxjs/operators';
 
 import { Store } from '../classes';
+import { StoreClass } from '../types';
+import { DestroyOptions } from '../interfaces';
 
 
 @Injectable({
@@ -12,8 +14,8 @@ import { Store } from '../classes';
 export class FsDb {
 
   private _stores = new Map<string, Store<any>>();
-  private _ready$ = new Subject();
-  private _sync$ = new Subject();
+  private _ready$ = new Subject<void>();
+  private _sync$ = new Subject<void>();
   private _ready = false;
 
   public register(store: Store<any>): FsDb {
@@ -30,12 +32,12 @@ export class FsDb {
     return this;
   }
 
-  public store(store: string | any): Store<any> {
+  public store<T = any>(store: string | StoreClass): Store<T> {
     if (typeof (store) === 'string') {
       return this._stores.get(store);
     }
 
-    return this._stores.get((store as any).storeName);
+    return this._stores.get(store.storeName);
   }
 
   public get stores(): Store<any>[] {
@@ -57,7 +59,12 @@ export class FsDb {
             );
         }),
         tap(() => {
-          this._ready$.next(null);
+          // _ready must flip here: once _ready$ has completed it emits nothing to
+          // late subscribers, so ready$ has to fall back to of(true) for anyone
+          // subscribing after init(). Without this, a subscriber that arrives late
+          // waits forever.
+          this._ready = true;
+          this._ready$.next();
           this._ready$.complete();
         }),
         catchError((error) => {
@@ -85,30 +92,62 @@ export class FsDb {
       );
   }
 
-  public startSync(seconds): Observable<void> {
-    return new Observable((observer) => {
-      this._sync$ = new Subject();
+  /**
+   * Starts polling every `seconds` until stopSync() is called.
+   *
+   * The returned Observable reports the *first* sync round: it emits once and
+   * completes on success, or errors if that first round fails. Polling continues
+   * either way — later rounds keep running and report failures via console.
+   *
+   * The polling loop deliberately does NOT live on this Observable's
+   * subscription: completing/erroring it would otherwise run the teardown and
+   * unsubscribe the very timer it is reporting on, killing sync after one round.
+   * stopSync() is what ends the loop.
+   */
+  public startSync(seconds: number): Observable<void> {
+    this._sync$ = new Subject();
 
-      timer(0, seconds * 1000)
-        .pipe(
-          filter(() => {
-            return navigator.onLine;
-          }),
-          switchMap(() => this.sync()),
-          tap(() => {
-            observer.next(null);
-            observer.complete();
-          }),
-          catchError((error) => {
-            console.error('Sync Error', error);
-            observer.error();
+    const firstRound$ = new Subject<void>();
+    let reported = false;
 
-            return of(null);
-          }),
-          takeUntil(this._sync$),
-        )
-        .subscribe();
-    });
+    // Report only the first round, then stay silent. Guarded so a completed
+    // Subject is never written to again.
+    const report = (error?: any): void => {
+      if (reported) {
+        return;
+      }
+
+      reported = true;
+
+      if (error) {
+        firstRound$.error(error);
+      } else {
+        firstRound$.next();
+        firstRound$.complete();
+      }
+    };
+
+    timer(0, seconds * 1000)
+      .pipe(
+        filter(() => navigator.onLine),
+        // Each round catches its own errors so one failure cannot tear down the
+        // polling loop.
+        switchMap(() => this.sync()
+          .pipe(
+            tap(() => report()),
+            catchError((error) => {
+              console.error('Sync Error', error);
+              report(error);
+
+              return of(null);
+            }),
+          ),
+        ),
+        takeUntil(this._sync$),
+      )
+      .subscribe();
+
+    return firstRound$.asObservable();
   }
 
   public stopSync(): void {
@@ -123,19 +162,19 @@ export class FsDb {
     );
   }
 
-  public destroy(): Observable<any> {
+  public destroy(options?: DestroyOptions): Observable<any> {
     this.stopSync();
 
     return concat(
       ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.destroy()),
+        .map((store: Store<any>) => store.destroy(options)),
     )
       .pipe(
         toArray(),
       );
   }
 
-  public get ready$() {
+  public get ready$(): Observable<any> {
     if (!this._ready) {
       return this._ready$.asObservable();
     }

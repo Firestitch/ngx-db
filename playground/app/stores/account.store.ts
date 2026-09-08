@@ -1,12 +1,16 @@
 import { Store } from '@firestitch/db';
 
-export class AccountStore extends Store<UnitType> {
+export class AccountStore extends Store<Country> {
 
-  public static storeName = 'account';
+  public static storeName = 'country';
   public static keyName = 'id';
 
 }
 
-interface UnitType {
-  id?: string;
+export interface Country {
+  id?: number;
+  country?: string;
+  regionId?: number;
+  population?: number;
+  date?: string | Date;
 }

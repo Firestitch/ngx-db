@@ -2,7 +2,7 @@
   "name": "@firestitch/db",
   "title": "DB",
   "description": "@firestitch/db",
-  "version": "18.0.0",
+  "version": "18.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/Firestitch/ngx-db"
@@ -26,7 +26,9 @@
     "package:publish": "cd node_modules/@firestitch/component-tools && npm run cli:package:publish",
     "demo:build": "cd node_modules/@firestitch/component-tools && npm run cli:demo",
     "serve": "cd node_modules/@firestitch/component-tools && npm run cli:serve",
-    "npm-update": "npx npm-check-updates -u \"/@firestitch/\" --target semver"
+    "npm-update": "npx npm-check-updates -u \"/@firestitch/\" --target semver",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^18.2.7",
@@ -77,9 +79,12 @@
     "@firestitch/skeleton": "^18.0.0",
     "@firestitch/store": "^18.0.0",
     "@firestitch/style": "^18.0.38",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.0.1",
     "lodash-es": "^4.17.15",
     "rxjs": "^7.5.6",
     "typescript": "5.4.5",
+    "vitest": "^2.1.9",
     "zone.js": "~0.14.10"
   },
   "engines": {

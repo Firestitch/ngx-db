@@ -1,24 +1,29 @@
 import { Observable, of } from 'rxjs';
 
-import { OperatorData } from '../classes';
-import { Data } from '../interfaces';
+import { OperatorData, applyLimit, applyMap, applySort } from '../classes';
+import { SyncState } from '../enums';
+import { Data, DestroyOptions } from '../interfaces';
+import { Operator, StorageKey } from '../types';
 
 import { Storage } from './storage';
 
 
 export class MemoryStorage extends Storage {
 
-  private _data = {};
+  private _data: { [key: string]: Data<any> } = {};
 
-  public gets(operators: any[]): Observable<any> {
+  public gets(operators: Operator[] = []): Observable<Data<any>[]> {
     const operatorData = new OperatorData(operators);
-    const data = Object.values(this._data)
+    let data = Object.values(this._data)
       .filter((item: any) => {
         return operatorData.match(item);
       })
       .map((item: any) => ({ ...item }));
 
-    return of(data);
+    data = applySort(data, operatorData.sortOperators);
+    data = applyLimit(data, operatorData);
+
+    return applyMap(data, operatorData);
   }
 
   public put(data: Data<any>[] | Data<any>): Observable<void> {
@@ -39,15 +44,18 @@ export class MemoryStorage extends Storage {
     return of(null);
   }
 
-  public delete(keys: string[]): Observable<void> {
-    keys.forEach((key) => {
-      delete this._data[key];
-    });
+  public delete(keys: StorageKey[]): Observable<void> {
+    const removing = new Set(keys.map((key) => String(key)));
+
+    this._data = Object.fromEntries(
+      Object.entries(this._data)
+        .filter(([key]) => !removing.has(key)),
+    );
 
     return of(null);
   }
 
-  public get(key: string): Observable<any> {
+  public get(key: StorageKey): Observable<Data<any>> {
     return of(this._data[key]);
   }
 
@@ -67,8 +75,23 @@ export class MemoryStorage extends Storage {
     return of(null);
   }
 
-  public destroy(): Observable<void> {
-    return of(null);
+  // Memory storage is discarded with the page, but honour preserveUnsynced so the
+  // option behaves consistently across backends instead of being ignored.
+  public destroy(options?: DestroyOptions): Observable<void> {
+    if(options?.preserveUnsynced) {
+      this._data = Object.fromEntries(
+        Object.entries(this._data)
+          .filter(([, item]) => {
+            const state = item._sync?.state;
+
+            return state && state !== SyncState.Synced;
+          }),
+      );
+
+      return of(null);
+    }
+
+    return this.clear();
   }
 
 }

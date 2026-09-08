@@ -7,6 +7,7 @@ import { GetComponent } from './components/get/get.component';
 @Component({
     selector: 'app-root',
     templateUrl: 'app.component.html',
+    styleUrls: ['app.component.scss'],
     standalone: true,
     imports: [FsExampleModule, ConsoleComponent, GetComponent]
 })

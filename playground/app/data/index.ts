@@ -1,2 +1,2 @@
 export * from './account.data';
-export * from './building.data';
+export * from './region.data';

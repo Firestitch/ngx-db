@@ -33,6 +33,8 @@ export class Remote<T> {
     }
 
     this._syncing = true;
+
+    return true;
   }
 
   public endSync(): void {
@@ -90,10 +92,13 @@ export class Remote<T> {
               switchMap((storageData: { [key: string]: any }) => {
                 remoteData = remoteData
                   .filter((item) => {
-                    // Filter only items that have no sync state or sync state Synced
+                    // Only overwrite records that have no local sync state or are
+                    // already Synced. `|| SyncState.Synced` was always truthy (it is
+                    // the non-empty string 'synced'), so this filter accepted every
+                    // record and a remote pull clobbered local Pending/Error edits.
                     const syncState = storageData[item[this._store.keyName]]?._sync?.state;
 
-                    return !syncState || SyncState.Synced;
+                    return !syncState || syncState === SyncState.Synced;
                   })
                   .map((item) => {
                     return this._store.storage.putSynced(item);

@@ -44,4 +44,11 @@ export class OperatorData {
         return operator.name === 'mapOne';
       });
   }
+
+  public get mapManyOperators(): Operator[] {
+    return this._operators
+      .filter((operator: any) => {
+        return operator.name === 'mapMany';
+      });
+  }
 }

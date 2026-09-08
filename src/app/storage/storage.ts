@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Data } from '../interfaces';
-import { Operator } from '../types';
+import { Data, DestroyOptions } from '../interfaces';
+import { Operator, StorageKey } from '../types';
 import { Store } from '../classes';
 import { SyncState } from '../enums';
 
@@ -39,13 +39,13 @@ export abstract class Storage {
     return this.put(item);
   }
 
-  public abstract get(key: string | number): Observable<Data<any>>;
+  public abstract get(key: StorageKey): Observable<Data<any>>;
   public abstract gets(operators?: Operator[]): Observable<Data<any>[]>;
-  public abstract put(item: Data<any>[] | Data<any>): Observable<void>;
+  public abstract put(item: Data<any> | Data<any>[]): Observable<void>;
   public abstract clear(): Observable<void>;
-  public abstract delete(keys: string[]): Observable<void>;
+  public abstract delete(keys: StorageKey[]): Observable<void>;
   public abstract init(): Observable<void>;
   public abstract open(): Observable<void>;
-  public abstract destroy(): Observable<void>;
+  public abstract destroy(options?: DestroyOptions): Observable<void>;
 
 }

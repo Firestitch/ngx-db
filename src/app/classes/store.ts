@@ -1,10 +1,10 @@
 import { Observable, Subject, merge, of } from 'rxjs';
-import { map, mapTo, switchMap, tap } from 'rxjs/operators';
+import { map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { SyncState } from '../enums';
-import { Changes, Data, StoreConfig } from '../interfaces';
+import { ChangeType, Changes, Data, DestroyOptions, StoreConfig } from '../interfaces';
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
-import { Operator } from '../types';
+import { Operator, StorageKey } from '../types';
 
 import { Remote } from './remote';
 
@@ -30,7 +30,7 @@ export class Store<T> {
     }
   }
 
-  public createStorage(store): Storage {
+  public createStorage(store: Store<T>): Storage {
     this.config.storage = this.config.storage || {
       type: 'indexDb',
     };
@@ -44,10 +44,15 @@ export class Store<T> {
 
       case 'localStorage':
         return new LocalStorage(store);
+
+      default:
+        // Previously fell through and returned undefined, so the failure only
+        // surfaced later as "cannot read property of undefined" on first use.
+        throw new Error(`Unknown storage type '${this._config.storage.type}'`);
     }
   }
 
-  public change(type, data?) {
+  public change(type: ChangeType, data?: Data<T> | Data<T>[] | Record<string, unknown>): void {
     this._changes$.next({ type, data });
   }
 
@@ -80,7 +85,7 @@ export class Store<T> {
       );
   }
 
-  public keys(...operators: Operator[]): Observable<string[]> {
+  public keys(...operators: Operator[]): Observable<StorageKey[]> {
     return this.gets(...operators)
       .pipe(
         map((data) => data
@@ -111,24 +116,32 @@ export class Store<T> {
         }),
     )
       .pipe(
-        switchMap((syncData) => {
+        // mergeMap, not switchMap: switchMap cancels the in-flight save when the
+        // next record arrives, so putting an array silently dropped every write
+        // but the last one to start.
+        mergeMap((syncData) => {
           if (this._remote?.saveable && navigator.onLine) {
             return this._remote.save(syncData);
           }
 
           return this._storage.put(syncData)
             .pipe(
-              mapTo(syncData),
+              map(() => syncData),
             );
         }),
         tap((syncData) => {
           this.change('put', syncData);
         }),
-        mapTo(null),
+        // put() is documented as Observable<void>, so it must emit exactly once.
+        // Without toArray it emitted per record, and any consumer using
+        // firstValueFrom/take(1)/switchMap unsubscribed after the first record
+        // and cancelled the rest.
+        toArray(),
+        map(() => null),
       );
   }
 
-  public delete(...operators: any): Observable<any> {
+  public delete(...operators: Operator[]): Observable<void> {
     return this.gets(...operators)
       .pipe(
         switchMap((data) => {
@@ -158,17 +171,17 @@ export class Store<T> {
       );
   }
 
-  public destroy(): Observable<void> {
+  public destroy(options?: DestroyOptions): Observable<void> {
     this._remote?.destroy();
 
-    return this._storage.destroy();
+    return this._storage.destroy(options);
   }
 
-  public get(key: string | number): Observable<T> {
+  public get(key: StorageKey): Observable<Data<T>> {
     return this._storage.get(key);
   }
 
-  public gets(...operators: Operator[]): Observable<any[]> {
+  public gets(...operators: Operator[]): Observable<Data<T>[]> {
     return this._storage.gets(operators);
   }
 

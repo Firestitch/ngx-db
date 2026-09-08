@@ -44,3 +44,11 @@ dist/*
 /demo
 /*.code-workspace
 /docs
+
+# >>> specify-mcp managed >>>
+# Managed by @firestitch/specify-mcp. Edits inside this block are overwritten.
+# Put your own rules outside it. Add "specify-mcp: unmanaged" anywhere to opt out.
+/.specify/
+/CLAUDE.md
+/CLAUDE.local.md
+# <<< specify-mcp managed <<<

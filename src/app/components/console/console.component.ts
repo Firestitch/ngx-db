@@ -90,22 +90,28 @@ export class ConsoleComponent implements OnInit {
             {
               label: 'Destroy DB',
               click: () => this._db.destroy()
-                .subscribe(),
+                .subscribe({
+                  next: () => this._message.success('Destroyed'),
+                  error: (error) => this._message.error(String(error?.message ?? error)),
+                }),
             },
             {
               label: 'Clean DB',
               click: () => this._db.clear()
-                .subscribe(),
+                .subscribe({
+                  next: () => this._message.success('Cleared'),
+                  error: (error) => this._message.error(String(error?.message ?? error)),
+                }),
             },
           ],
         },
       ],
       fetch: (query) => {
-        if (!query.store) {
-          return of({ data: [] });
-        }
-
-        const store = this._db.store(query.store);
+        // Default to the first registered store. Without this the console renders
+        // an empty grid until a store is picked, which reads as broken.
+        const store = query.store
+          ? this._db.store(query.store)
+          : this._db.stores[0];
 
         if (!store) {
           return of({ data: [] });
@@ -158,11 +164,10 @@ export class ConsoleComponent implements OnInit {
           .pipe(
             map(({ storeData, records }) => {
               return {
-                data: storeData.map((data) => {
-                  const sync = data._sync;
-                  delete data._sync;
-
-                  return { data, sync };
+                // Destructure rather than `delete data._sync`, which mutated the
+                // record the storage layer handed back.
+                data: storeData.map(({ _sync, ...data }) => {
+                  return { data, sync: _sync };
                 }),
                 paging: { records, offset: query.offset },
               };
@@ -179,11 +184,13 @@ export class ConsoleComponent implements OnInit {
       required: true,
     })
       .pipe(
-        switchMap((seconds) => this._db.startSync(seconds),
-        ),
+        // The prompt yields a string; startSync multiplies by 1000, so an
+        // unconverted value produced a NaN interval and the timer never fired.
+        switchMap((seconds) => this._db.startSync(Number(seconds))),
       )
-      .subscribe(() => {
-        this._message.success('Started Sync');
+      .subscribe({
+        next: () => this._message.success('Started Sync'),
+        error: (error) => this._message.error(String(error?.message ?? error)),
       });
   }
 
