@@ -2,7 +2,7 @@
   "name": "@firestitch/db",
   "title": "DB",
   "description": "@firestitch/db",
-  "version": "18.0.1",
+  "version": "18.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/Firestitch/ngx-db"
