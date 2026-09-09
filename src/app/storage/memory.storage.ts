@@ -1,8 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { OperatorData, applyLimit, applyMap, applySort } from '../classes';
-import { SyncState } from '../enums';
-import { Data, DestroyOptions } from '../interfaces';
+import { Data } from '../interfaces';
 import { Operator, StorageKey } from '../types';
 
 import { Storage } from './storage';
@@ -75,22 +74,7 @@ export class MemoryStorage extends Storage {
     return of(null);
   }
 
-  // Memory storage is discarded with the page, but honour preserveUnsynced so the
-  // option behaves consistently across backends instead of being ignored.
-  public destroy(options?: DestroyOptions): Observable<void> {
-    if(options?.preserveUnsynced) {
-      this._data = Object.fromEntries(
-        Object.entries(this._data)
-          .filter(([, item]) => {
-            const state = item._sync?.state;
-
-            return state && state !== SyncState.Synced;
-          }),
-      );
-
-      return of(null);
-    }
-
+  public destroy(): Observable<void> {
     return this.clear();
   }
 

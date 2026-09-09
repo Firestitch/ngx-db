@@ -6,7 +6,8 @@ import { Store } from '../src/app/classes/store';
 import { SyncState } from '../src/app/enums';
 import { MemoryStorage } from '../src/app/storage/memory.storage';
 import { LocalStorage } from '../src/app/storage/local.storage';
-import { eq } from '../src/app/operators';
+import { eq, filter } from '../src/app/operators';
+import { isSynced } from '../src/app/helpers';
 
 
 class AccountStore extends Store<any> {
@@ -176,7 +177,7 @@ describe('LocalStorage', () => {
 });
 
 
-describe('IndexDbStorage destroy({ preserveUnsynced })', () => {
+describe('IndexDbStorage destroy', () => {
   let store: Store<any>;
 
   beforeEach(() => {
@@ -188,27 +189,8 @@ describe('IndexDbStorage destroy({ preserveUnsynced })', () => {
     (globalThis as any).indexedDB = new IDBFactory();
   });
 
-  it('keeps unsynced records and drops synced/server ones', async () => {
-    await firstValueFrom(store.init());
-
-    // Server-sourced (no _sync at all) and explicitly Synced records must go.
-    await firstValueFrom(store.storage.put({ id: 'server' }));
-    await firstValueFrom(store.storage.putSynced({ id: 'synced' }));
-
-    // Locally queued work must survive.
-    await firstValueFrom(store.storage.put({ id: 'pending', _sync: { state: SyncState.Pending } }));
-    await firstValueFrom(store.storage.putError({ id: 'errored' }));
-
-    await firstValueFrom(store.destroy({ preserveUnsynced: true }));
-
-    const remaining = (await firstValueFrom(store.gets()))
-      .map((item) => item.id)
-      .sort();
-
-    expect(remaining).toEqual(['errored', 'pending']);
-  });
-
-  it('destroy without options removes the object store entirely', async () => {
+  // destroy removes the object store itself; clear() is what empties one.
+  it('removes the object store entirely', async () => {
     await firstValueFrom(store.init());
     await firstValueFrom(store.storage.put({ id: 'pending', _sync: { state: SyncState.Pending } }));
 
@@ -219,27 +201,35 @@ describe('IndexDbStorage destroy({ preserveUnsynced })', () => {
     expect(describe.objectStoreNames).not.toContain('account');
   });
 
-  it('preserveUnsynced on an empty store is a no-op', async () => {
+  it('clear empties the store but leaves it in place', async () => {
     await firstValueFrom(store.init());
+    await firstValueFrom(store.storage.put({ id: '1' }));
 
-    await expect(
-      firstValueFrom(store.destroy({ preserveUnsynced: true })),
-    ).resolves.toBeNull();
+    await firstValueFrom(store.clear());
+
+    const describe: any = await firstValueFrom((store.storage as any)._indexDB.describe);
+
+    expect(describe.objectStoreNames).toContain('account');
+    expect(await firstValueFrom(store.gets())).toEqual([]);
   });
 
-  it('preserveUnsynced deletes a large batch of synced records', async () => {
+  // How an app keeps unsent work while dropping the rest: delete by predicate
+  // rather than tearing the store down.
+  it('delete with a filter keeps the records that fail it', async () => {
     await firstValueFrom(store.init());
 
-    for (let i = 0; i < 30; i++) {
-      await firstValueFrom(store.storage.putSynced({ id: `s${i}` }));
-    }
-    await firstValueFrom(store.storage.put({ id: 'keep', _sync: { state: SyncState.Pending } }));
+    await firstValueFrom(store.storage.put({ id: 'server' }));
+    await firstValueFrom(store.storage.putSynced({ id: 'synced' }));
+    await firstValueFrom(store.storage.put({ id: 'pending', _sync: { state: SyncState.Pending } }));
+    await firstValueFrom(store.storage.putError({ id: 'errored' }));
 
-    await firstValueFrom(store.destroy({ preserveUnsynced: true }));
+    await firstValueFrom(store.delete(filter((record) => isSynced(record))));
 
-    const remaining = (await firstValueFrom(store.gets())).map((item) => item.id);
+    const remaining = (await firstValueFrom(store.gets()))
+      .map((item) => item.id)
+      .sort();
 
-    expect(remaining).toEqual(['keep']);
+    expect(remaining).toEqual(['errored', 'pending']);
   });
 });
 
@@ -257,18 +247,6 @@ describe('destroy parity across backends', () => {
     expect(await firstValueFrom(storage.gets([]))).toEqual([]);
   });
 
-  it('MemoryStorage.destroy preserves unsynced records when asked', async () => {
-    const storage = new MemoryStorage(memoryStore());
-    await firstValueFrom(storage.putSynced({ id: 'synced' }));
-    await firstValueFrom(storage.put({ id: 'pending', _sync: { state: SyncState.Pending } }));
-
-    await firstValueFrom(storage.destroy({ preserveUnsynced: true }));
-
-    const remaining = (await firstValueFrom(storage.gets([]))).map((item) => item.id);
-
-    expect(remaining).toEqual(['pending']);
-  });
-
   it('LocalStorage.destroy clears the store', async () => {
     const storage = new LocalStorage(new AccountStore({ storage: { type: 'localStorage' } }));
     await firstValueFrom(storage.put([{ id: '1' }]));
@@ -276,18 +254,6 @@ describe('destroy parity across backends', () => {
     await firstValueFrom(storage.destroy());
 
     expect(await firstValueFrom(storage.gets([]))).toEqual([]);
-  });
-
-  it('LocalStorage.destroy preserves unsynced records when asked', async () => {
-    const storage = new LocalStorage(new AccountStore({ storage: { type: 'localStorage' } }));
-    await firstValueFrom(storage.putSynced({ id: 'synced' }));
-    await firstValueFrom(storage.put({ id: 'pending', _sync: { state: SyncState.Pending } }));
-
-    await firstValueFrom(storage.destroy({ preserveUnsynced: true }));
-
-    const remaining = (await firstValueFrom(storage.gets([]))).map((item) => item.id);
-
-    expect(remaining).toEqual(['pending']);
   });
 });
 

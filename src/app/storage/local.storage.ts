@@ -2,8 +2,7 @@ import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
 import { OperatorData, applyLimit, applyMap, applySort } from '../classes';
-import { SyncState } from '../enums';
-import { Data, DestroyOptions } from '../interfaces';
+import { Data } from '../interfaces';
 import { Operator, StorageKey } from '../types';
 
 import { Storage } from './storage';
@@ -106,23 +105,8 @@ export class LocalStorage extends Storage {
   }
 
   // localStorage keeps one blob per store, so destroy and clear are the same
-  // operation. preserveUnsynced is honoured so the option means the same thing
-  // on every backend rather than being silently ignored.
-  public destroy(options?: DestroyOptions): Observable<void> {
-    if(options?.preserveUnsynced) {
-      return this.gets()
-        .pipe(
-          switchMap((data: Data<any>[]) => {
-            const keys = data
-              .filter((item) => !item._sync?.state || item._sync.state === SyncState.Synced)
-              .map((item) => item[this._store.keyName]);
-
-            return keys.length ? this.delete(keys) : of(null);
-          }),
-          map(() => null),
-        );
-    }
-
+  // operation.
+  public destroy(): Observable<void> {
     return this.clear();
   }
 

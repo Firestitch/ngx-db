@@ -2,7 +2,7 @@ import { Observable, Subject, merge, of } from 'rxjs';
 import { map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { SyncState } from '../enums';
-import { ChangeType, Changes, Data, DestroyOptions, StoreConfig } from '../interfaces';
+import { ChangeType, Changes, Data, StoreConfig } from '../interfaces';
 import { IndexDbStorage, LocalStorage, MemoryStorage, Storage } from '../storage';
 import { Operator, StorageKey } from '../types';
 
@@ -171,10 +171,10 @@ export class Store<T> {
       );
   }
 
-  public destroy(options?: DestroyOptions): Observable<void> {
+  public destroy(): Observable<void> {
     this._remote?.destroy();
 
-    return this._storage.destroy(options);
+    return this._storage.destroy();
   }
 
   public get(key: StorageKey): Observable<Data<T>> {

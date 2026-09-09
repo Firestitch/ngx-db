@@ -5,7 +5,6 @@ import { catchError, filter, switchMap, takeUntil, tap, toArray } from 'rxjs/ope
 
 import { Store } from '../classes';
 import { StoreClass } from '../types';
-import { DestroyOptions } from '../interfaces';
 
 
 @Injectable({
@@ -162,12 +161,12 @@ export class FsDb {
     );
   }
 
-  public destroy(options?: DestroyOptions): Observable<any> {
+  public destroy(): Observable<any> {
     this.stopSync();
 
     return concat(
       ...Array.from(this._stores.values())
-        .map((store: Store<any>) => store.destroy(options)),
+        .map((store: Store<any>) => store.destroy()),
     )
       .pipe(
         toArray(),

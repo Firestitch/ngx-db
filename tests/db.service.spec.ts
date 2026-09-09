@@ -121,16 +121,16 @@ describe('FsDb clear / destroy', () => {
     expect(await firstValueFrom(buildings.gets())).toEqual([]);
   });
 
-  it('destroy passes options through to every store', async () => {
+  it('destroy tears down every store', async () => {
     const db = new FsDb();
     const accounts = new AccountStore(memConfig());
     db.register(accounts);
 
     const destroy = vi.spyOn(accounts, 'destroy');
 
-    await firstValueFrom(db.destroy({ preserveUnsynced: true }));
+    await firstValueFrom(db.destroy());
 
-    expect(destroy).toHaveBeenCalledWith({ preserveUnsynced: true });
+    expect(destroy).toHaveBeenCalled();
   });
 });
 

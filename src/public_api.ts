@@ -5,3 +5,5 @@ export * from './app/storage';
 export * from './app/classes';
 export * from './app/components';
 export * from './app/operators';
+export * from './app/helpers';
+export * from './app/enums';
