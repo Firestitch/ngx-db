@@ -120,13 +120,14 @@ export class Store<T> {
         // next record arrives, so putting an array silently dropped every write
         // but the last one to start.
         mergeMap((syncData) => {
-          if (this._remote?.saveable && navigator.onLine) {
-            return this._remote.save(syncData);
-          }
-
+          // Written before anything is sent. The send used to come first, with
+          // the write only after the server answered, so a record whose send
+          // failed existed nowhere: not on the server and not in the queue
           return this._storage.put(syncData)
             .pipe(
-              map(() => syncData),
+              switchMap(() => this._remote?.saveable && navigator.onLine
+                ? this._remote.send(syncData)
+                : of(syncData)),
             );
         }),
         tap((syncData) => {
