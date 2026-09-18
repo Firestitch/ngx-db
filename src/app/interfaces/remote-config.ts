@@ -17,9 +17,15 @@ export interface RemoteConfig<T = any> {
   /**
    * How long, in milliseconds, the send that put() makes straight away may take
    * before put() stops waiting and leaves the record pending for the next sync.
-   * Off by default, because giving up on a request that may already have reached
-   * the server means the next sync sends it again: only set this for endpoints
-   * that answer a repeat with the record they already hold.
+   *
+   * Off by default, and only safe to set on an endpoint that is idempotent.
+   * Timing out does not cancel the request: it may already have reached the
+   * server and been committed, and the answer merely lost on the way back. The
+   * record is still pending, so the next sync sends it again. On an endpoint
+   * that creates a new record per request, that is a duplicate on the server,
+   * and nothing on the client can see it happen. Set this only where a repeat
+   * is answered with the record the server already holds, keyed on something
+   * the client generates.
    */
   saveTimeout?: number;
   /**
