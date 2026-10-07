@@ -1,9 +1,12 @@
-import { Observable, concat, merge, of, throwError } from 'rxjs';
-import { catchError, filter, finalize, map, mapTo, switchMap, tap, toArray } from 'rxjs/operators';
+import { Observable, TimeoutError, concat, merge, of, throwError } from 'rxjs';
+import {
+  catchError, filter, finalize, map, mapTo, switchMap, tap, timeout, toArray,
+} from 'rxjs/operators';
 
 import { SyncState } from '../enums';
 import { Data, RemoteConfig } from '../interfaces';
 import { filter as operatorFilter } from '../operators';
+import { StorageKey } from '../types';
 
 import { Store } from './store';
 
@@ -16,6 +19,9 @@ export class Remote<T> {
   private _gets: (query: { limit: number; offset: number; modifyDate: Date }) => Observable<any[]>;
   private _put: (data: any) => Observable<any>;
   private _post: (data: any) => Observable<any>;
+  // Records put() is sending right now. They are already in storage as pending,
+  // so without this a sync round that fires mid-send would send them again
+  private _sending = new Set<StorageKey>();
 
   constructor(
     private _store: Store<any>,
@@ -138,7 +144,8 @@ export class Remote<T> {
     return this._store
       .gets(
         operatorFilter((item: Data<any>) => {
-          return item._sync?.state === SyncState.Pending;
+          return item._sync?.state === SyncState.Pending
+            && !this._sending.has(item[this._store.keyName]);
         }),
       )
       .pipe(
@@ -173,6 +180,47 @@ export class Remote<T> {
 
   public get saveable(): boolean {
     return !!this._post || !!this._put;
+  }
+
+  /**
+   * The send put() makes straight away, for a record it has already written to
+   * storage as pending. Emits the record once it is either synced or left
+   * pending for the next sync; errors only when the server refused it.
+   *
+   * "Could not be sent" and "refused" are different outcomes. navigator.onLine
+   * only says a network is attached, so on Wi-Fi with no internet behind it, or
+   * a signal too weak to carry data, the send fails or hangs although the
+   * device reports a connection. The record is safe in storage, so that is not
+   * a failure the caller needs to hear about: the next sync sends it.
+   */
+  public send(item: Data<T>): Observable<Data<T>> {
+    const key: StorageKey = item[this._store.keyName];
+
+    this._sending.add(key);
+
+    // save() rewrites _sync on what it is given; the pending copy is kept intact
+    return this.save({ ...item, _sync: { ...item._sync } })
+      .pipe(
+        this._config.saveTimeout
+          ? timeout({ first: this._config.saveTimeout })
+          : (source) => source,
+        map(() => item),
+        catchError((error: unknown) => {
+          if (!this._queueOnError(error)) {
+            return throwError(() => error);
+          }
+
+          // save() marks a failed update as Error, which takes it out of the
+          // sync. This one was not refused, so it goes back in as pending
+          return this._store.storage.put(item)
+            .pipe(
+              map(() => item),
+            );
+        }),
+        finalize(() => {
+          this._sending.delete(key);
+        }),
+      );
   }
 
   public save(item: Data<T>): Observable<any> {
@@ -216,6 +264,20 @@ export class Remote<T> {
           return this._store.storage.putSynced(response);
         }),
       );
+  }
+
+  private _queueOnError(error: unknown): boolean {
+    if (this._config.queueOnError) {
+      return this._config.queueOnError(error);
+    }
+
+    if (error instanceof TimeoutError) {
+      return true;
+    }
+
+    const status = (error as { status?: unknown })?.status;
+
+    return status === 0 || (typeof status === 'number' && status >= 500);
   }
 
   private _getAllPages(): Observable<any[]> {
